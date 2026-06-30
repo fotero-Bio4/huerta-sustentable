@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual · Huerta Sustentable</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--verde:#2d5a27;--verde-claro:#e8f5e2;--verde-medio:#4a8a3f;--crema:#faf7f2;--crema-oscura:#f0ebe0;--texto:#1a1a1a;--texto-suave:#5a5a5a;--borde:#d4c9b5;--acento:#c8832a;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'DM Sans',sans-serif;background:var(--crema);color:var(--texto);line-height:1.6;}
+  header{background:var(--verde);padding:2.5rem 1.5rem 3rem;text-align:center;position:relative;overflow:hidden;}
+  header::before{content:'';position:absolute;bottom:-20px;left:0;right:0;height:40px;background:var(--crema);border-radius:50% 50% 0 0/100% 100% 0 0;}
+  .hdr-emoji{font-size:2.8rem;display:block;margin-bottom:.4rem;}
+  header h1{font-family:'Fraunces',serif;font-size:2rem;color:#fff;font-weight:700;}
+  header p{color:#b8d9b0;font-size:.95rem;margin-top:.4rem;}
+  .container{max-width:760px;margin:0 auto;padding:1.5rem 1rem 4rem;}
+
+  /* Accesos rápidos */
+  .accesos{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin:-1rem 0 1.75rem;}
+  .acceso{background:#fff;border:1.5px solid var(--borde);border-radius:14px;padding:1rem .85rem;text-align:center;text-decoration:none;color:var(--texto);transition:transform .12s,box-shadow .2s,border-color .15s;display:flex;flex-direction:column;gap:.35rem;align-items:center;}
+  .acceso:hover{transform:translateY(-3px);box-shadow:0 6px 18px rgba(45,90,39,.12);border-color:var(--verde-medio);}
+  .acceso .ic{font-size:1.6rem;}
+  .acceso .t{font-weight:600;font-size:.9rem;color:var(--verde);}
+  .acceso .s{font-size:.72rem;color:var(--texto-suave);word-break:break-word;}
+
+  /* Índice */
+  .toc{background:#fff;border:1px solid var(--borde);border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.5rem;}
+  .toc h2{font-family:'Fraunces',serif;font-size:1rem;color:var(--verde);margin-bottom:.6rem;}
+  .toc a{display:inline-block;color:var(--verde-medio);text-decoration:none;font-size:.86rem;margin:.2rem .9rem .2rem 0;border-bottom:1px dotted var(--verde-medio);}
+  .toc a:hover{color:var(--verde);}
+
+  /* Acordeón */
+  .acc{background:#fff;border:1px solid var(--borde);border-radius:14px;margin-bottom:.85rem;overflow:hidden;scroll-margin-top:1rem;}
+  .acc-head{display:flex;align-items:center;gap:.6rem;padding:1rem 1.25rem;cursor:pointer;user-select:none;font-family:'Fraunces',serif;font-size:1.08rem;color:var(--verde);font-weight:600;}
+  .acc-head .num{background:var(--verde-claro);color:var(--verde);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;}
+  .acc-head .chev{margin-left:auto;transition:transform .2s;color:var(--verde-medio);font-size:.9rem;}
+  .acc.open .acc-head .chev{transform:rotate(180deg);}
+  .acc-body{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+  .acc.open .acc-body{max-height:2600px;}
+  .acc-inner{padding:0 1.25rem 1.25rem;font-size:.92rem;color:var(--texto);}
+  .acc-inner p{margin-bottom:.7rem;} .acc-inner ul,.acc-inner ol{margin:.3rem 0 .8rem 1.25rem;} .acc-inner li{margin-bottom:.4rem;}
+  .acc-inner strong{color:var(--verde-medio);}
+  code{background:var(--crema-oscura);padding:.1rem .4rem;border-radius:5px;font-size:.85em;font-family:ui-monospace,Menlo,Consolas,monospace;}
+
+  .pill{display:inline-block;background:var(--verde);color:#fff;border-radius:8px;padding:.45rem .9rem;text-decoration:none;font-size:.85rem;font-weight:600;margin:.2rem .3rem .2rem 0;}
+  .pill.alt{background:#fff;color:var(--verde);border:1.5px solid var(--verde);}
+  .pill:hover{background:var(--verde-medio);}
+
+  .nota{border-radius:0 10px 10px 0;padding:.75rem 1rem;margin:.7rem 0;font-size:.88rem;}
+  .nota.warn{background:#fff8e6;border-left:4px solid var(--acento);color:#6b4a10;}
+  .nota.tip{background:var(--verde-claro);border-left:4px solid var(--verde-medio);color:var(--verde);}
+  .nota.danger{background:#fdecea;border-left:4px solid #c0392b;color:#7a241c;}
+
+  table{width:100%;border-collapse:collapse;margin:.5rem 0 .8rem;font-size:.85rem;}
+  th,td{text-align:left;padding:.5rem .7rem;border:1px solid var(--crema-oscura);}
+  th{background:var(--verde-claro);color:var(--verde);}
+
+  .steps{counter-reset:s;list-style:none;margin-left:0!important;}
+  .steps li{position:relative;padding-left:2rem;margin-bottom:.6rem;}
+  .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:0;background:var(--verde-claro);color:var(--verde);width:1.4rem;height:1.4rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:600;}
+
+  footer{text-align:center;color:var(--texto-suave);font-size:.8rem;padding:1rem;}
+  @media(max-width:540px){.accesos{grid-template-columns:1fr;}header h1{font-size:1.6rem;}}
+</style>
+</head>
+<body>
+<header>
+  <span class="hdr-emoji">🌿</span>
+  <h1>Manual de uso — Admin</h1>
+  <p>Huerta Sustentable · Guía para gestionar pedidos</p>
+</header>
+
+<div class="container">
+
+  <!-- ACCESOS DIRECTOS -->
+  <div class="accesos">
+    <a class="acceso" href="https://huerta-sustentable.netlify.app/admin.html" target="_blank">
+      <span class="ic">🛠️</span><span class="t">Panel Admin</span><span class="s">Gestionar pedidos</span>
+    </a>
+    <a class="acceso" href="https://huerta-sustentable.netlify.app/pedidos.html" target="_blank">
+      <span class="ic">🛒</span><span class="t">Formulario</span><span class="s">Lo que ve el cliente</span>
+    </a>
+    <a class="acceso" href="https://bio4-my.sharepoint.com/:x:/r/personal/fotero_bio4_com_ar/_layouts/15/Doc.aspx?sourcedoc=%7BF52035CB-B1FA-4109-BEA7-5DDFCCE6130B%7D&file=huerta_base_semanal.xlsx&action=default&mobileredirect=true" target="_blank">
+      <span class="ic">📊</span><span class="t">Excel (base de datos)</span><span class="s">Pedidos, precios, usuarios</span>
+    </a>
+  </div>
+
+  <div class="nota tip">💡 <strong>En una frase:</strong> los clientes cargan pedidos desde el <em>Formulario</em>, vos los gestionás desde el <em>Panel Admin</em>, y todo se guarda en el <em>Excel</em>. No hay nada que instalar: se usa desde el navegador (celu o compu).</div>
+
+  <!-- ÍNDICE -->
+  <div class="toc">
+    <h2>📑 Contenido</h2>
+    <a href="#s1">1. Cómo entrar</a>
+    <a href="#s2">2. Ver y gestionar pedidos</a>
+    <a href="#s3">3. Detalle y cosecha</a>
+    <a href="#s4">4. Precios y stock</a>
+    <a href="#s5">5. Exportar al ERP (PDV)</a>
+    <a href="#s6">6. Usuarios y contraseñas</a>
+    <a href="#s7">7. Rutina semanal</a>
+    <a href="#s8">8. Problemas comunes</a>
+  </div>
+
+  <!-- 1 -->
+  <div class="acc open" id="s1">
+    <div class="acc-head" onclick="tog(this)"><span class="num">1</span> Cómo entrar al panel <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <p>El panel de administración está en:</p>
+      <a class="pill" href="https://huerta-sustentable.netlify.app/admin.html" target="_blank">🛠️ Abrir Panel Admin</a>
+      <ol class="steps">
+        <li>Abrí el link de arriba en cualquier navegador (Chrome, Edge, el del celu).</li>
+        <li>Ingresá tu <strong>mail</strong> y <strong>contraseña</strong>.</li>
+        <li>Listo: ves todos los pedidos en vivo.</li>
+      </ol>
+      <div class="nota tip">📌 Guardalo en favoritos o agregalo a la pantalla de inicio del celular para entrar con un toque.</div>
+      <p>La página de inicio del sitio (<code>huerta-sustentable.netlify.app</code>) lleva al <strong>formulario del cliente</strong>. El panel siempre se abre agregando <code>/admin.html</code> al final.</p>
+    </div></div>
+  </div>
+
+  <!-- 2 -->
+  <div class="acc" id="s2">
+    <div class="acc-head" onclick="tog(this)"><span class="num">2</span> Ver y gestionar pedidos <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <p>En la pestaña <strong>📋 Pedidos</strong> ves cada pedido con los datos del cliente, el detalle, la forma de pago y entrega.</p>
+      <ul>
+        <li><strong>Filtrar / buscar:</strong> usá los botones (Todos, Pendientes, Preparando, Entregados) o el buscador por nombre, teléfono o barrio.</li>
+        <li><strong>Cambiar estado:</strong> botón <em>“Cambiar estado”</em> → Pendiente / Preparando / Entregado / Cancelado. Queda guardado en el Excel.</li>
+        <li><strong>Precio final:</strong> botón <em>“✏️ precio”</em> para cargar el monto confirmado del pedido (lo que charlás por WhatsApp).</li>
+        <li><strong>WhatsApp:</strong> el botón 💬 abre un chat con ese cliente con un saludo listo.</li>
+        <li><strong>🔄 Actualizar:</strong> recarga los pedidos desde el Excel (útil si entró uno nuevo).</li>
+      </ul>
+      <div class="nota tip">Arriba ves los totales: cantidad de pedidos, pendientes y monto total de la semana.</div>
+    </div></div>
+  </div>
+
+  <!-- 3 -->
+  <div class="acc" id="s3">
+    <div class="acc-head" onclick="tog(this)"><span class="num">3</span> Detalle por verdura y cosecha <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <p>Para saber <strong>cuánto cosechar</strong>, sin sumar a mano:</p>
+      <ul>
+        <li><strong>🌱 Detalle por verdura:</strong> tabla con la cantidad total pedida de cada verdura (suma de todos los pedidos no cancelados).</li>
+        <li><strong>🧺 Cosecha:</strong> el mismo resumen agrupado por tipo, más la cantidad de bolsones y de extras (bandejas, escabeches).</li>
+      </ul>
+      <div class="nota tip">Ideal mirarlo el <strong>jueves a la tarde</strong>, cuando ya cerraron los pedidos, antes de cosechar el viernes.</div>
+    </div></div>
+  </div>
+
+  <!-- 4 -->
+  <div class="acc" id="s4">
+    <div class="acc-head" onclick="tog(this)"><span class="num">4</span> Cambiar precios y stock <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <p>En la pestaña <strong>⚙️ Precios y stock</strong> controlás lo que ve el cliente en el formulario:</p>
+      <ul>
+        <li><strong>Precios generales:</strong> bolsón semanal, costo de envío y las bandejas/extras.</li>
+        <li><strong>“Con stock” (extras):</strong> si lo apagás, ese extra aparece como “Sin stock” y no se puede pedir.</li>
+        <li><strong>Por verdura:</strong> editás el precio y prendés/apagás el stock de cada una. Lo que esté <strong>sin stock no aparece</strong> en el formulario del cliente.</li>
+      </ul>
+      <p>Tocá <strong>💾 Guardar cambios</strong>. Se escribe en el Excel y el formulario lo toma al recargarse.</p>
+      <div class="nota tip">También podés editar precios directamente en el Excel (hoja <em>Detalle por Verdura</em>) — es la misma fuente.</div>
+    </div></div>
+  </div>
+
+  <!-- 5 -->
+  <div class="acc" id="s5">
+    <div class="acc-head" onclick="tog(this)"><span class="num">5</span> Exportar el pedido al ERP (PDV) <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <p>En la pestaña <strong>📤 Exportar PDV</strong>:</p>
+      <ol class="steps">
+        <li>Elegí <strong>fecha desde</strong> y <strong>fecha hasta</strong>.</li>
+        <li>Tocá <strong>Generar .xls</strong>. Se descarga un archivo con el formato de importación del ERP (una fila por ítem).</li>
+        <li>Importá ese <code>.xls</code> en el ERP como siempre.</li>
+      </ol>
+      <div class="nota warn">⚠️ <strong>Importante (una sola vez):</strong> para que cada verdura salga con su código del ERP, hay que completar la hoja <strong>“Mapeo PDV”</strong> del Excel:
+        <ul style="margin-top:.4rem">
+          <li>En la tabla de productos, poné el <strong>código (PRODUCTO)</strong> de cada verdura / extra / bolsón.</li>
+          <li>En el bloque de <strong>campos fijos</strong> completá lo que va igual en todas las filas (cliente, comprobante, vendedor, sucursal, depósitos, dimensiones…).</li>
+        </ul>
+        Mientras falte un código, el archivo lo marca como <code>[FALTA CODIGO: …]</code> y el panel te avisa cuántos quedaron sin completar.
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 6 -->
+  <div class="acc" id="s6">
+    <div class="acc-head" onclick="tog(this)"><span class="num">6</span> Usuarios y contraseñas del admin <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <p>Los usuarios que pueden entrar al panel se administran en la hoja <strong>“Usuarios”</strong> del Excel:</p>
+      <a class="pill alt" href="https://bio4-my.sharepoint.com/:x:/r/personal/fotero_bio4_com_ar/_layouts/15/Doc.aspx?sourcedoc=%7BF52035CB-B1FA-4109-BEA7-5DDFCCE6130B%7D&file=huerta_base_semanal.xlsx&action=default&mobileredirect=true" target="_blank">📊 Abrir el Excel</a>
+      <p>La hoja tiene 3 columnas:</p>
+      <table>
+        <tr><th>Mail</th><th>Nombre</th><th>Pss</th></tr>
+        <tr><td>admin@huerta</td><td>Administrador</td><td>huerta2026</td></tr>
+        <tr><td>maria@huerta.com</td><td>María</td><td>miClave123</td></tr>
+      </table>
+      <ul>
+        <li><strong>Agregar una persona:</strong> escribí una fila nueva con su mail, nombre y contraseña.</li>
+        <li><strong>Cambiar una contraseña:</strong> editá la celda de la columna <em>Pss</em>.</li>
+        <li><strong>Quitar acceso:</strong> borrá su fila.</li>
+      </ul>
+      <p>Los cambios valen <strong>al instante</strong>: el panel lee la hoja en cada inicio de sesión.</p>
+      <div class="nota danger">🔒 <strong>Seguridad:</strong> las contraseñas se guardan como texto en el Excel. Usá claves <strong>distintas</strong> de las importantes (mail, banco) y cambiá la de ejemplo <code>huerta2026</code> por una propia.</div>
+    </div></div>
+  </div>
+
+  <!-- 7 -->
+  <div class="acc" id="s7">
+    <div class="acc-head" onclick="tog(this)"><span class="num">7</span> Rutina de la semana <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <table>
+        <tr><th>Cuándo</th><th>Qué hacés</th></tr>
+        <tr><td>Lun–Jue</td><td>Los pedidos entran solos por el formulario. Los revisás en el panel y vas confirmando precio por WhatsApp.</td></tr>
+        <tr><td>Jueves tarde</td><td>Cerrás pedidos. Mirás <strong>Detalle / Cosecha</strong> para saber cuánto cosechar.</td></tr>
+        <tr><td>Viernes</td><td>Cosechás y entregás. Vas marcando estados (Preparando → Entregado).</td></tr>
+        <tr><td>Cuando toque</td><td>Generás el <strong>PDV</strong> por rango de fechas para importar al ERP.</td></tr>
+      </table>
+    </div></div>
+  </div>
+
+  <!-- 8 -->
+  <div class="acc" id="s8">
+    <div class="acc-head" onclick="tog(this)"><span class="num">8</span> Problemas comunes <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <ul>
+        <li><strong>“Mail o contraseña incorrectos”:</strong> revisá que el mail y la clave coincidan exactamente con la hoja <em>Usuarios</em> (sin espacios de más).</li>
+        <li><strong>El formulario no muestra una verdura:</strong> probablemente está <em>sin stock</em>. Activala en <em>Precios y stock</em>.</li>
+        <li><strong>No aparece un pedido nuevo:</strong> tocá <strong>🔄 Actualizar</strong> en el panel.</li>
+        <li><strong>El PDV dice “FALTA CODIGO”:</strong> completá el código de ese producto en la hoja <em>Mapeo PDV</em> (ver punto 5).</li>
+        <li><strong>“Servidor no configurado” / errores al cargar:</strong> es un tema de configuración del sitio (variables de entorno). Avisá a quien lo administra.</li>
+      </ul>
+    </div></div>
+  </div>
+
+  <footer>🌿 Huerta Sustentable · Producción local y agroecológica</footer>
+</div>
+
+<script>
+  function tog(head){ head.parentElement.classList.toggle('open'); }
+  // Abrir la sección si se llega por #ancla
+  if (location.hash) { const el=document.querySelector(location.hash); if(el&&el.classList.contains('acc')) el.classList.add('open'); }
+  document.querySelectorAll('.toc a').forEach(a=>a.addEventListener('click',()=>{ const el=document.querySelector(a.getAttribute('href')); if(el) el.classList.add('open'); }));
+</script>
+</body>
+</html>
