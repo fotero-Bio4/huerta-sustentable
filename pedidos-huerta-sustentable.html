@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pedidos Huerta Sustentable</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --verde:#2d5a27; --verde-claro:#e8f5e2; --verde-medio:#4a8a3f;
+    --crema:#faf7f2; --crema-oscura:#f0ebe0;
+    --texto:#1a1a1a; --texto-suave:#5a5a5a; --borde:#d4c9b5; --acento:#c8832a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--crema);color:var(--texto);min-height:100vh;}
+
+  header{background:var(--verde);padding:2rem 1.5rem 2.5rem;text-align:center;position:relative;overflow:hidden;}
+  header::before{content:'';position:absolute;bottom:-20px;left:0;right:0;height:40px;background:var(--crema);border-radius:50% 50% 0 0/100% 100% 0 0;}
+  .hdr-emoji{font-size:2.5rem;display:block;margin-bottom:.5rem;}
+  header h1{font-family:'Fraunces',serif;font-size:2rem;color:#fff;font-weight:700;letter-spacing:-.02em;}
+  header p{color:#b8d9b0;font-size:.9rem;margin-top:.4rem;}
+
+  .container{max-width:600px;margin:0 auto;padding:2rem 1rem 4rem;}
+  .bienvenida{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;font-size:.92rem;line-height:1.75;}
+  .bienvenida p{margin-bottom:.6rem;}
+  .bienvenida p:last-child{margin-bottom:0;}
+  .aviso{background:#fff8e6;border-left:4px solid var(--acento);border-radius:0 10px 10px 0;padding:.7rem 1rem;margin:.6rem 0;font-size:.88rem;color:#6b4a10;font-weight:500;}
+
+  .section{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:1.5rem;margin-bottom:1.25rem;}
+  .section-title{font-family:'Fraunces',serif;font-size:1.1rem;color:var(--verde);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+
+  label{display:block;font-size:.85rem;font-weight:500;color:var(--texto-suave);margin-bottom:.35rem;margin-top:.75rem;}
+  label:first-of-type{margin-top:0;}
+  input[type="text"],input[type="tel"],input[type="email"],input[type="number"],select,textarea{
+    width:100%;padding:.65rem .9rem;border:1.5px solid var(--borde);border-radius:10px;
+    font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--texto);
+    background:var(--crema);transition:border-color .2s;-webkit-appearance:none;appearance:none;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--verde-medio);background:#fff;}
+
+  /* ENTREGA */
+  .entrega-tabs{display:flex;gap:.5rem;margin-bottom:.75rem;}
+  .etab{flex:1;padding:.65rem .5rem;border:2px solid var(--borde);border-radius:10px;background:var(--crema);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;color:var(--texto-suave);transition:all .2s;text-align:center;}
+  .etab:hover{border-color:var(--verde-medio);}
+  .etab.active{border-color:var(--verde);background:var(--verde-claro);color:var(--verde);}
+  .entrega-panel{display:none;}
+  .entrega-panel.show{display:block;}
+  .envio-aviso{background:#fff3e0;border:1px solid #f0c070;border-radius:10px;padding:.65rem .9rem;font-size:.85rem;color:#7a4f0d;margin-top:.5rem;display:flex;align-items:center;gap:.5rem;}
+  .retiro-info{background:var(--verde-claro);border:1px solid #b8d9a8;border-radius:10px;padding:.75rem 1rem;font-size:.88rem;color:var(--verde);margin-top:.5rem;line-height:1.6;}
+  .retiro-info a{color:var(--verde);font-weight:600;}
+  .maps-btn{display:inline-flex;align-items:center;gap:.4rem;margin-top:.5rem;padding:.4rem .9rem;background:#5ba052;color:#fff;border-radius:8px;font-size:.82rem;font-weight:600;text-decoration:none;transition:background .15s;}
+  .maps-btn:hover{background:#4a8a3f;}
+
+  /* TABS PEDIDO */
+  .tabs{display:flex;gap:.5rem;margin-bottom:1rem;}
+  .tab-btn{flex:1;padding:.6rem;border:1.5px solid var(--borde);border-radius:8px;background:var(--crema);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;color:var(--texto-suave);transition:all .2s;}
+  .tab-btn.active{background:var(--verde);color:#fff;border-color:var(--verde);}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+
+  /* BOLSÓN */
+  .bolson-qty-box{display:flex;align-items:center;gap:1.25rem;padding:1rem;background:var(--crema);border:1.5px solid var(--borde);border-radius:12px;margin-bottom:.75rem;}
+  .bolson-qty-label{flex:1;font-size:.95rem;}
+  .bolson-qty-label span{display:block;font-size:.8rem;color:var(--texto-suave);margin-top:2px;}
+
+  /* PRODUCTOS */
+  .grupo-titulo{font-family:'Fraunces',serif;font-size:.95rem;color:var(--verde);font-weight:600;margin:1rem 0 .4rem;padding-bottom:.3rem;border-bottom:1.5px solid var(--verde-claro);}
+  .producto-row{display:flex;align-items:center;gap:.5rem;padding:.5rem 0;border-bottom:1px solid var(--crema-oscura);}
+  .producto-row:last-child{border-bottom:none;}
+  .producto-nombre{flex:1;font-size:.88rem;line-height:1.3;}
+  .precio-ref{font-size:.75rem;color:#bbb;white-space:nowrap;}
+  .qty-control{display:flex;align-items:center;gap:.4rem;}
+  .qty-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--borde);background:var(--crema);cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--verde);font-weight:700;}
+  .qty-btn:hover{background:var(--verde-claro);border-color:var(--verde);}
+  .qty-num{width:22px;text-align:center;font-weight:500;font-size:.88rem;}
+  .prod-sub{font-weight:600;color:var(--acento);min-width:52px;text-align:right;font-size:.82rem;}
+
+  .total-armado{display:flex;justify-content:space-between;align-items:center;margin-top:1rem;padding:.75rem 1rem;background:var(--verde-claro);border-radius:10px;border:1px solid #b8d9a8;}
+  .total-armado span{font-size:.88rem;color:var(--verde);font-weight:500;}
+  .total-armado strong{font-family:'Fraunces',serif;font-size:1.2rem;color:var(--verde);}
+
+  /* EXTRAS */
+  .extra-card{border:1.5px solid var(--borde);border-radius:12px;padding:.9rem 1rem;margin-bottom:.6rem;background:var(--crema);}
+  .extra-header{display:flex;align-items:center;gap:.75rem;}
+  .extra-info{flex:1;}
+  .extra-nombre{font-size:.92rem;font-weight:600;}
+  .extra-desc{font-size:.78rem;color:var(--texto-suave);margin-top:2px;}
+  .extra-subtotal{font-weight:700;color:var(--acento);font-size:.9rem;min-width:70px;text-align:right;}
+  .stock-badge{display:inline-block;background:#f8d7da;color:#721c24;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:8px;margin-left:6px;}
+
+  .ensalada-panel{margin-top:.75rem;display:none;}
+  .ensalada-panel.show{display:block;}
+  .ens-row{display:flex;align-items:center;gap:.5rem;padding:.45rem 0;border-bottom:1px solid var(--crema-oscura);font-size:.86rem;}
+  .ens-row:last-child{border-bottom:none;}
+  .ens-nombre{flex:1;}
+  .ens-sub{font-weight:600;color:var(--acento);min-width:55px;text-align:right;font-size:.82rem;}
+
+  /* RESUMEN */
+  .resumen-box{background:var(--verde-claro);border:1.5px solid #b8d9a8;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;}
+  .resumen-row{display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:.35rem;color:var(--texto-suave);}
+  .resumen-row.envio{color:var(--acento);font-weight:500;}
+  .resumen-total{display:flex;justify-content:space-between;font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;color:var(--verde);border-top:1.5px solid #b8d9a8;margin-top:.5rem;padding-top:.5rem;}
+  .resumen-aviso{font-size:.78rem;color:var(--verde-medio);margin-top:.4rem;font-style:italic;}
+
+  /* PAGO */
+  .pago-opciones{display:flex;flex-direction:column;gap:.75rem;}
+  .pago-card{border:2px solid var(--borde);border-radius:12px;padding:.9rem 1.1rem;cursor:pointer;display:flex;align-items:center;gap:.9rem;transition:all .2s;background:var(--crema);}
+  .pago-card:hover{border-color:var(--verde-medio);}
+  .pago-card.selected{border-color:var(--verde);background:var(--verde-claro);}
+  .pago-card input[type="radio"]{display:none;}
+  .pago-icon{font-size:1.5rem;}
+  .pago-info .pago-nombre{font-weight:600;font-size:.95rem;}
+  .pago-info .pago-detalle{font-size:.82rem;color:var(--texto-suave);}
+  .pago-extra-info{display:none;margin-top:.75rem;background:#e8f5e2;border:1px solid #b8d9a8;border-radius:10px;padding:.75rem 1rem;font-size:.88rem;color:var(--verde);line-height:1.6;}
+  .pago-extra-info.show{display:block;}
+
+  .btn-confirmar{width:100%;padding:1rem;background:var(--verde);color:#fff;border:none;border-radius:14px;font-family:'Fraunces',serif;font-size:1.15rem;font-weight:600;cursor:pointer;transition:background .2s,transform .1s;}
+  .btn-confirmar:hover{background:var(--verde-medio);}
+  .btn-confirmar:active{transform:scale(.98);}
+
+  .success-screen{display:none;text-align:center;padding:2rem 1rem;}
+  .success-screen.show{display:block;}
+  .success-icon{font-size:4rem;margin-bottom:1rem;}
+  .success-title{font-family:'Fraunces',serif;font-size:1.6rem;color:var(--verde);margin-bottom:.5rem;}
+  .success-msg{color:var(--texto-suave);line-height:1.75;}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="hdr-emoji">🌿</span>
+  <h1>Huerta Sustentable</h1>
+  <p>Verduras frescas y agroecológicas</p>
+</header>
+
+<div class="container" id="mainForm">
+
+  <div class="bienvenida">
+    <p>¡Hola! 👋 Este formulario es para realizar tu pedido de verduras frescas y agroecológicas 🌱🥬</p>
+    <p>Podés seleccionar los productos que quieras junto con la cantidad en atados, unidades o kilos. También tenés la opción de agregar ensaladas, bandejas soperas y escabeches de berenjenas según disponibilidad.</p>
+    <p>📦 Los pedidos se preparan a demanda, por lo que te pedimos completar el formulario con atención.</p>
+    <div class="aviso">⚠️ IMPORTANTE: Los pedidos se toman hasta los días <strong>jueves por la tarde</strong>.</div>
+    <p>📲 Una vez recibido, nos estaremos contactando por WhatsApp para confirmar el pedido y pasarte el precio del bolsón que armaste.</p>
+    <p>¡Gracias por elegir producción local y saludable! 💚</p>
+  </div>
+
+  <!-- DATOS -->
+  <div class="section">
+    <div class="section-title">👤 Tus datos</div>
+    <label>Nombre y apellido</label>
+    <input type="text" id="nombre" placeholder="Ej: Laura González" />
+    <label>Teléfono (WhatsApp)</label>
+    <input type="tel" id="telefono" placeholder="Ej: 3584123456" />
+    <label>Correo electrónico</label>
+    <input type="email" id="email" placeholder="Ej: laura@gmail.com" />
+    <label>Barrio</label>
+    <select id="barrio">
+      <option value="">Seleccioná tu barrio</option>
+      <option>Alberdi</option>
+      <option>Banda Norte</option>
+      <option>Sur</option>
+      <option>Oeste</option>
+      <option>Centro</option>
+    </select>
+    <div style="margin-top:.75rem;background:var(--verde-claro);border-radius:10px;padding:.6rem .9rem;font-size:.85rem;color:var(--verde);font-weight:500;">
+      📅 Las entregas se realizan todos los <strong>viernes</strong>
+    </div>
+  </div>
+
+  <!-- ENTREGA -->
+  <div class="section">
+    <div class="section-title">🚚 Forma de entrega</div>
+    <div class="entrega-tabs">
+      <div class="etab active" id="etab-envio" onclick="selEntrega('envio')">🛵 Envío a domicilio</div>
+      <div class="etab" id="etab-retiro" onclick="selEntrega('retiro')">🌿 Retiro en la huerta</div>
+    </div>
+
+    <div class="entrega-panel show" id="panel-envio">
+      <label>Dirección de entrega</label>
+      <input type="text" id="direccion" placeholder="Calle y número" oninput="onDireccion(this.value)" />
+      <div class="envio-aviso" id="envio-aviso" style="display:none">
+        🛵 El costo de envío es de <strong>$4.000</strong> y se suma al total.
+      </div>
+    </div>
+
+    <div class="entrega-panel" id="panel-retiro">
+      <div class="retiro-info">
+        <strong>Retiro sin costo 🎉</strong><br>
+        📍 Ruta 8 km 609, Río Cuarto, Córdoba<br>
+        Coordinamos el horario por WhatsApp.<br>
+        <a class="maps-btn" href="https://maps.google.com/?q=Ruta+8+km+609+Rio+Cuarto+Cordoba" target="_blank">
+          🗺️ Ver en Google Maps
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- PEDIDO -->
+  <div class="section">
+    <div class="section-title">🥬 Tu pedido</div>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="cambiarTab(this,'bolsones')">Bolsones publicados</button>
+      <button class="tab-btn" onclick="cambiarTab(this,'armalo')">Armá tu bolsón</button>
+    </div>
+
+    <!-- BOLSONES -->
+    <div class="tab-content active" id="tab-bolsones">
+      <div class="bolson-qty-box">
+        <div class="bolson-qty-label">
+          Bolsón semanal
+          <span>Surtido de verduras de estación según disponibilidad</span>
+        </div>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="chBolson(-1)">−</button>
+          <span class="qty-num" id="bolson-qty" style="width:28px;font-size:.95rem;">0</span>
+          <button class="qty-btn" onclick="chBolson(1)">+</button>
+        </div>
+        <span id="bolson-sub" style="font-weight:700;color:var(--acento);min-width:70px;text-align:right;font-size:.9rem;"></span>
+      </div>
+      <label>Aclaraciones o preferencias</label>
+      <textarea id="notas-bolson" rows="2" placeholder="Ej: sin remolacha, más tomate, alergias, etc."></textarea>
+    </div>
+
+    <!-- ARMÁ TU BOLSÓN -->
+    <div class="tab-content" id="tab-armalo">
+      <div class="grupo-titulo">🥬 Hortalizas de hoja</div>
+      <div id="lista-hoja"></div>
+      <div class="grupo-titulo">🍅 Hortalizas de fruto</div>
+      <div id="lista-fruto"></div>
+      <div class="grupo-titulo">🎃 Zapallos</div>
+      <div id="lista-zapallo"></div>
+      <div class="grupo-titulo">🌿 Tallos y hojas</div>
+      <div id="lista-tallos"></div>
+      <div class="grupo-titulo">🌱 Aromáticas</div>
+      <div id="lista-aromaticas"></div>
+      <div class="total-armado">
+        <span>Total seleccionado</span>
+        <strong id="total-armado-val">$0</strong>
+      </div>
+      <label style="margin-top:1rem;">Aclaraciones</label>
+      <textarea id="notas-armado" rows="2" placeholder="Cualquier aclaración sobre tu pedido"></textarea>
+    </div>
+  </div>
+
+  <!-- EXTRAS -->
+  <div class="section">
+    <div class="section-title">🍱 Extras (según disponibilidad)</div>
+
+    <!-- Bandeja sopera -->
+    <div class="extra-card" id="card-sopera">
+      <div class="extra-header">
+        <div class="extra-info">
+          <div class="extra-nombre">Bandeja sopera</div>
+          <div class="extra-desc">Mix de verduras listas para sopa o caldo — $3.500 c/u</div>
+        </div>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="chExtra('sopera',-1)">−</button>
+          <span class="qty-num" id="sopera-qty">0</span>
+          <button class="qty-btn" onclick="chExtra('sopera',1)">+</button>
+        </div>
+        <span class="extra-subtotal" id="sopera-sub"></span>
+      </div>
+    </div>
+
+    <!-- Bandeja ensalada -->
+    <div class="extra-card" id="card-ensalada">
+      <div class="extra-header">
+        <div class="extra-info">
+          <div class="extra-nombre">Bandeja de ensalada</div>
+          <div class="extra-desc">Elegís el tipo abajo — $3.500 c/u</div>
+        </div>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="chExtra('ensalada',-1)">−</button>
+          <span class="qty-num" id="ensalada-qty">0</span>
+          <button class="qty-btn" onclick="chExtra('ensalada',1)">+</button>
+        </div>
+        <span class="extra-subtotal" id="ensalada-sub"></span>
+      </div>
+      <div class="ensalada-panel" id="ensalada-panel">
+        <div style="font-size:.82rem;color:var(--texto-suave);margin:.6rem 0 .4rem;">Elegí el/los tipo de ensalada y la cantidad de cada una:</div>
+        <div id="ensalada-rows"></div>
+        <label style="margin-top:.6rem;">O describí la ensalada que preferís</label>
+        <textarea id="ensalada-libre" rows="2" placeholder="Ej: lechuga + tomate cherry + zanahoria rallada..."></textarea>
+      </div>
+    </div>
+
+    <!-- Escabeche -->
+    <div class="extra-card" id="card-escabeche">
+      <div class="extra-header">
+        <div class="extra-info">
+          <div class="extra-nombre">
+            Escabeche de berenjenas
+            <span id="escabeche-stock-badge" class="stock-badge" style="display:none">Sin stock</span>
+          </div>
+          <div class="extra-desc" id="escabeche-desc">Berenjenas en escabeche artesanal — $3.500 c/u</div>
+        </div>
+        <div class="qty-control" id="escabeche-qty-ctrl">
+          <button class="qty-btn" onclick="chExtra('escabeche',-1)">−</button>
+          <span class="qty-num" id="escabeche-qty">0</span>
+          <button class="qty-btn" onclick="chExtra('escabeche',1)">+</button>
+        </div>
+        <span class="extra-subtotal" id="escabeche-sub"></span>
+      </div>
+    </div>
+
+    <label style="margin-top:.5rem;">Aclaraciones sobre extras</label>
+    <textarea id="notas-extras" rows="2" placeholder="Cualquier aclaración sobre extras"></textarea>
+  </div>
+
+  <!-- RESUMEN -->
+  <div class="resumen-box" id="resumenBox" style="display:none">
+    <div id="resumenItems"></div>
+    <div class="resumen-total">
+      <span>Total estimado</span>
+      <span id="resumenTotal">$0</span>
+    </div>
+    <div class="resumen-aviso">💬 Te confirmamos el precio final por WhatsApp antes de preparar el pedido.</div>
+  </div>
+
+  <!-- PAGO -->
+  <div class="section">
+    <div class="section-title">💳 Forma de pago</div>
+    <div class="pago-opciones">
+      <label class="pago-card" onclick="selPago(this,'Transferencia')">
+        <input type="radio" name="pago" value="transferencia">
+        <span class="pago-icon">🏦</span>
+        <div class="pago-info">
+          <div class="pago-nombre">Transferencia</div>
+          <div class="pago-detalle">Alias: mi.perra.venecia — Banco Nación</div>
+        </div>
+      </label>
+      <div class="pago-extra-info" id="info-transferencia">
+        📎 Una vez confirmado el pedido, transferís al alias <strong>mi.perra.venecia</strong> (Banco Nación) y enviás el comprobante por WhatsApp al <strong>358 420 9218</strong>.
+      </div>
+      <label class="pago-card" onclick="selPago(this,'Efectivo en entrega')">
+        <input type="radio" name="pago" value="efectivo">
+        <span class="pago-icon">💵</span>
+        <div class="pago-info">
+          <div class="pago-nombre">Efectivo</div>
+          <div class="pago-detalle">Pagás cuando recibís el pedido</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <button class="btn-confirmar" onclick="confirmarPedido()">Enviar pedido ✓</button>
+</div>
+
+<!-- ÉXITO -->
+<div class="success-screen container" id="successScreen">
+  <div class="success-icon">🌱</div>
+  <div class="success-title">¡Pedido enviado!</div>
+  <p class="success-msg" id="successMsg"></p>
+  <br>
+  <button class="btn-confirmar" style="max-width:320px;margin:0 auto;display:block" onclick="abrirWhatsApp()">
+    Confirmar por WhatsApp 📲
+  </button>
+</div>
+
+<script>
+const WHATSAPP = '5493584209218';
+
+// ════════════════════════════════════════════════════════
+// ✏️  CONFIGURACIÓN EDITABLE
+// ════════════════════════════════════════════════════════
+const CONFIG = {
+  PRECIO_ENVIO:     4000,
+  PRECIO_BOLSON:    20000,  // ✏️ Editar precio bolsón aquí
+  PRECIO_SOPERA:    3500,
+  PRECIO_ENSALADA:  3500,
+  PRECIO_ESCABECHE: 3500,
+  ESCABECHE_SIN_STOCK: false,   // true = muestra "Sin stock" y deshabilita
+};
+
+const grupoHoja = [
+  { nombre:'Lechuga crespa',   unidad:'planta',  precio:1500 },
+  { nombre:'Lechuga morada',   unidad:'planta',  precio:1500 },
+  { nombre:'Acelga',           unidad:'atado',   precio:2000 },
+  { nombre:'Mizuna',           unidad:'atado',   precio:1500 },
+  { nombre:'Mostaza',          unidad:'atado',   precio:1500 },
+  { nombre:'Rúcula baby',      unidad:'atado',   precio:1500 },
+  { nombre:'Achicoria',        unidad:'atado',   precio:1500 },
+  { nombre:'Repollo blanco',   unidad:'unidad',  precio:1500 },
+];
+const grupoFruto = [
+  { nombre:'Tomate cherry',    unidad:'300 gr',  precio:2500 },
+  { nombre:'Pimiento verde',   unidad:'unidad',  precio:500  },
+  { nombre:'Pimiento rojo',    unidad:'unidad',  precio:1000 },
+  { nombre:'Ajíes picantes',   unidad:'unidad',  precio:500  },
+  { nombre:'Berenjena',        unidad:'unidad',  precio:2000 },
+  { nombre:'Brócoli',          unidad:'unidad',  precio:1500 },
+  { nombre:'Rabanito',         unidad:'atado',   precio:1500 },
+];
+const grupoZapallo = [
+  { nombre:'Anco',             unidad:'kg',      precio:2000 },
+  { nombre:'Zapallito verde',  unidad:'kg',      precio:1500 },
+  { nombre:'Zucchini',         unidad:'kg',      precio:1500 },
+  { nombre:'Calabaza rayada',  unidad:'kg',      precio:2000 },
+  { nombre:'Zapallo criollo',  unidad:'kg',      precio:2000 },
+];
+const grupoTallos = [
+  { nombre:'Cebolla de verdeo',unidad:'atado',   precio:1500 },
+  { nombre:'Puerro',           unidad:'atado',   precio:1500 },
+  { nombre:'Apio',             unidad:'atado',   precio:1500 },
+  { nombre:'Perejil',          unidad:'atado',   precio:1000 },
+];
+const grupoAromaticas = [
+  { nombre:'Ciboulette',       unidad:'atado',   precio:1000 },
+  { nombre:'Albahaca',         unidad:'atado',   precio:1000 },
+  { nombre:'Romero',           unidad:'atado',   precio:1000 },
+  { nombre:'Tomillo',          unidad:'atado',   precio:1000 },
+];
+
+const tiposEnsalada = [
+  'Achicoria + huevo',
+  'Zanahoria + repollo + huevo',
+  'Lechuga morada + zanahoria',
+  'Repollo + zanahoria + cherry',
+  'Lechuga crespa + apio + rabanito',
+];
+
+// ════════════════════════════════════════════════════════
+// ESTADO
+// ════════════════════════════════════════════════════════
+const grupoMap = { hoja:grupoHoja, fruto:grupoFruto, zapallo:grupoZapallo, tallos:grupoTallos, aromaticas:grupoAromaticas };
+let cantidades = {};
+Object.keys(grupoMap).forEach(k => cantidades[k] = new Array(grupoMap[k].length).fill(0));
+let cantEns = new Array(tiposEnsalada.length).fill(0);
+let cantBolson=0, extQty={sopera:0,ensalada:0,escabeche:0};
+let pagoSel=null, modo='bolsones', modoEntrega='envio', tieneDir=false;
+
+// ════════════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════════════
+function renderGrupo(elId, grupo, key) {
+  document.getElementById(elId).innerHTML = grupo.map((p,i) => `
+    <div class="producto-row">
+      <span class="producto-nombre">${p.nombre} <span style="color:#aaa;font-size:.78rem;">(${p.unidad})</span></span>
+      <span class="precio-ref">$${p.precio.toLocaleString('es-AR')}</span>
+      <div class="qty-control">
+        <button class="qty-btn" onclick="chProd('${key}',${i},-1)">−</button>
+        <span class="qty-num" id="${key}-q-${i}">0</span>
+        <button class="qty-btn" onclick="chProd('${key}',${i},1)">+</button>
+      </div>
+      <span class="prod-sub" id="${key}-s-${i}"></span>
+    </div>`).join('');
+}
+
+function renderEnsaladaRows() {
+  document.getElementById('ensalada-rows').innerHTML = tiposEnsalada.map((t,i) => `
+    <div class="ens-row">
+      <span class="ens-nombre">${t}</span>
+      <span style="font-size:.75rem;color:#bbb;margin-right:4px">$${CONFIG.PRECIO_ENSALADA.toLocaleString('es-AR')}</span>
+      <div class="qty-control">
+        <button class="qty-btn" style="width:24px;height:24px;font-size:.85rem" onclick="chEns(${i},-1)">−</button>
+        <span class="qty-num" style="width:18px;font-size:.82rem" id="ens-q-${i}">0</span>
+        <button class="qty-btn" style="width:24px;height:24px;font-size:.85rem" onclick="chEns(${i},1)">+</button>
+      </div>
+      <span class="ens-sub" id="ens-s-${i}"></span>
+    </div>`).join('');
+}
+
+function aplicarConfigEscabeche() {
+  const badge = document.getElementById('escabeche-stock-badge');
+  const ctrl  = document.getElementById('escabeche-qty-ctrl');
+  const desc  = document.getElementById('escabeche-desc');
+  if (CONFIG.ESCABECHE_SIN_STOCK) {
+    badge.style.display = 'inline-block';
+    ctrl.style.opacity  = '0.35';
+    ctrl.style.pointerEvents = 'none';
+    desc.textContent = 'Sin stock por el momento';
+    extQty.escabeche = 0;
+    document.getElementById('escabeche-qty').textContent = '0';
+    document.getElementById('escabeche-sub').textContent = '';
+  } else {
+    badge.style.display = 'none';
+    ctrl.style.opacity  = '1';
+    ctrl.style.pointerEvents = 'auto';
+    desc.textContent = `Berenjenas en escabeche artesanal — $${CONFIG.PRECIO_ESCABECHE.toLocaleString('es-AR')} c/u`;
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// INTERACCIONES
+// ════════════════════════════════════════════════════════
+function selEntrega(tipo) {
+  modoEntrega = tipo;
+  document.querySelectorAll('.etab').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.entrega-panel').forEach(p=>p.classList.remove('show'));
+  document.getElementById('etab-'+tipo).classList.add('active');
+  document.getElementById('panel-'+tipo).classList.add('show');
+  calcResumen();
+}
+
+function onDireccion(val) {
+  tieneDir = val.trim().length > 0;
+  document.getElementById('envio-aviso').style.display = tieneDir ? 'flex' : 'none';
+  calcResumen();
+}
+
+function chBolson(d) {
+  cantBolson = Math.max(0, cantBolson+d);
+  document.getElementById('bolson-qty').textContent = cantBolson;
+  document.getElementById('bolson-sub').textContent = cantBolson > 0
+    ? (CONFIG.PRECIO_BOLSON > 0 ? '$'+(cantBolson*CONFIG.PRECIO_BOLSON).toLocaleString('es-AR') : 'precio a confirmar')
+    : '';
+  calcResumen();
+}
+
+function chProd(key, i, d) {
+  cantidades[key][i] = Math.max(0, cantidades[key][i]+d);
+  document.getElementById(`${key}-q-${i}`).textContent = cantidades[key][i];
+  const sub = cantidades[key][i] * grupoMap[key][i].precio;
+  document.getElementById(`${key}-s-${i}`).textContent = sub > 0 ? '$'+sub.toLocaleString('es-AR') : '';
+  calcResumen();
+}
+
+function chEns(i, d) {
+  cantEns[i] = Math.max(0, cantEns[i]+d);
+  document.getElementById(`ens-q-${i}`).textContent = cantEns[i];
+  const sub = cantEns[i] * CONFIG.PRECIO_ENSALADA;
+  document.getElementById(`ens-s-${i}`).textContent = sub > 0 ? '$'+sub.toLocaleString('es-AR') : '';
+  calcResumen();
+}
+
+function chExtra(key, d) {
+  if (key==='escabeche' && CONFIG.ESCABECHE_SIN_STOCK) return;
+  extQty[key] = Math.max(0, extQty[key]+d);
+  document.getElementById(`${key}-qty`).textContent = extQty[key];
+  const precios = { sopera:CONFIG.PRECIO_SOPERA, ensalada:CONFIG.PRECIO_ENSALADA, escabeche:CONFIG.PRECIO_ESCABECHE };
+  const sub = extQty[key] * precios[key];
+  document.getElementById(`${key}-sub`).textContent = extQty[key] > 0 ? '$'+sub.toLocaleString('es-AR') : '';
+  if (key==='ensalada') {
+    extQty.ensalada > 0
+      ? document.getElementById('ensalada-panel').classList.add('show')
+      : document.getElementById('ensalada-panel').classList.remove('show');
+  }
+  calcResumen();
+}
+
+function selPago(el, nombre) {
+  document.querySelectorAll('.pago-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected'); pagoSel=nombre;
+  document.getElementById('info-transferencia').classList.toggle('show', nombre==='Transferencia');
+}
+
+function cambiarTab(btn, tab) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  modo=tab; calcResumen();
+}
+
+// ════════════════════════════════════════════════════════
+// RESUMEN
+// ════════════════════════════════════════════════════════
+function calcResumen() {
+  const box = document.getElementById('resumenBox');
+  let items=[], total=0;
+
+  if (modo==='bolsones' && cantBolson>0) {
+    const sub = cantBolson * CONFIG.PRECIO_BOLSON;
+    items.push({n:`Bolsón semanal ×${cantBolson}`, p: CONFIG.PRECIO_BOLSON>0 ? sub : null});
+    if (CONFIG.PRECIO_BOLSON>0) total+=sub;
+  } else if (modo==='armalo') {
+    let st=0;
+    Object.entries(grupoMap).forEach(([key,grupo])=>{
+      grupo.forEach((p,i)=>{
+        if (cantidades[key][i]>0) {
+          const s=cantidades[key][i]*p.precio;
+          items.push({n:`${p.nombre} ×${cantidades[key][i]} ${p.unidad}`, p:s});
+          st+=s; total+=s;
+        }
+      });
+    });
+    document.getElementById('total-armado-val').textContent='$'+st.toLocaleString('es-AR');
+  }
+
+  // extras
+  const pE={sopera:CONFIG.PRECIO_SOPERA, ensalada:CONFIG.PRECIO_ENSALADA, escabeche:CONFIG.PRECIO_ESCABECHE};
+  const nE={sopera:'Bandeja sopera', ensalada:'Bandeja de ensalada', escabeche:'Escabeche de berenjenas'};
+  Object.keys(extQty).forEach(k=>{
+    if (extQty[k]>0) {
+      const s=extQty[k]*pE[k]; items.push({n:`${nE[k]} ×${extQty[k]}`, p:s}); total+=s;
+    }
+  });
+  // ensaladas por tipo
+  tiposEnsalada.forEach((t,i)=>{
+    if (cantEns[i]>0) {
+      const s=cantEns[i]*CONFIG.PRECIO_ENSALADA;
+      items.push({n:`  ↳ ${t} ×${cantEns[i]}`, p:null}); // precio ya contado en ensalada
+    }
+  });
+
+  // envío
+  const conEnvio = modoEntrega==='envio' && tieneDir;
+  if (conEnvio) { items.push({n:'🛵 Envío a domicilio', p:CONFIG.PRECIO_ENVIO, envio:true}); total+=CONFIG.PRECIO_ENVIO; }
+
+  if (!items.length) { box.style.display='none'; return; }
+  box.style.display='block';
+  document.getElementById('resumenItems').innerHTML = items.map(it=>
+    `<div class="resumen-row${it.envio?' envio':''}"><span>${it.n}</span><span>${it.p!==null?'$'+it.p.toLocaleString('es-AR'):'a confirmar'}</span></div>`
+  ).join('');
+  document.getElementById('resumenTotal').textContent='$'+total.toLocaleString('es-AR');
+}
+
+// ════════════════════════════════════════════════════════
+// CONFIRMAR Y EMAIL
+// ════════════════════════════════════════════════════════
+function confirmarPedido() {
+  const nombre    = document.getElementById('nombre').value.trim();
+  const telefono  = document.getElementById('telefono').value.trim();
+  const email     = document.getElementById('email').value.trim();
+  const barrio    = document.getElementById('barrio').value;
+  const direccion = modoEntrega==='envio' ? document.getElementById('direccion').value.trim() : '';
+
+  if (!nombre||!telefono) { alert('Completá tu nombre y teléfono.'); return; }
+  if (!barrio)  { alert('Seleccioná tu barrio.'); return; }
+  if (!pagoSel) { alert('Elegí una forma de pago.'); return; }
+  if (modoEntrega==='envio' && !direccion) { alert('Ingresá tu dirección de entrega.'); return; }
+
+  let detalle='', total=0;
+  if (modo==='bolsones') {
+    if (!cantBolson) { alert('Seleccioná la cantidad de bolsones.'); return; }
+    detalle=`Bolsón semanal ×${cantBolson}`;
+    const n=document.getElementById('notas-bolson').value.trim();
+    if (n) detalle+='\n   Aclaraciones: '+n;
+  } else {
+    let lineas=[];
+    Object.entries(grupoMap).forEach(([key,grupo])=>{
+      grupo.forEach((p,i)=>{ if(cantidades[key][i]>0){ lineas.push(`${p.nombre} ×${cantidades[key][i]} ${p.unidad}`); total+=cantidades[key][i]*p.precio; } });
+    });
+    if (!lineas.length) { alert('Agregá al menos un producto.'); return; }
+    detalle=lineas.join('\n   ');
+    const n=document.getElementById('notas-armado').value.trim();
+    if (n) detalle+='\n   Aclaraciones: '+n;
+  }
+
+  let extLinea='';
+  const pE={sopera:CONFIG.PRECIO_SOPERA,ensalada:CONFIG.PRECIO_ENSALADA,escabeche:CONFIG.PRECIO_ESCABECHE};
+  const nE={sopera:'Bandeja sopera',ensalada:'Bandeja de ensalada',escabeche:'Escabeche de berenjenas'};
+  Object.keys(extQty).forEach(k=>{
+    if (extQty[k]>0){ extLinea+=`\n   ${nE[k]} ×${extQty[k]} ($${(extQty[k]*pE[k]).toLocaleString('es-AR')})`; total+=extQty[k]*pE[k]; }
+  });
+  tiposEnsalada.forEach((t,i)=>{ if(cantEns[i]>0) extLinea+=`\n     ↳ ${t} ×${cantEns[i]}`; });
+  const notaExt=document.getElementById('notas-extras').value.trim();
+  const ensFree=document.getElementById('ensalada-libre').value.trim();
+  if (ensFree) extLinea+=`\n     ↳ Descripción libre: ${ensFree}`;
+  if (notaExt) extLinea+=`\n   Nota: ${notaExt}`;
+
+  const entregaLinea = modoEntrega==='envio'
+    ? `📍 Envío a: ${direccion}, Barrio ${barrio} (+$${CONFIG.PRECIO_ENVIO.toLocaleString('es-AR')} envío)`
+    : `📍 Retiro en huerta — Ruta 8 km 609, Río Cuarto`;
+  if (modoEntrega==='envio') total+=CONFIG.PRECIO_ENVIO;
+
+  const msg=`¡Hola! Quiero hacer un pedido 🌿\n\n👤 *${nombre}*\n📱 ${telefono}${email?'\n📧 '+email:''}\n${entregaLinea}\n📅 Entrega: Viernes\n\n🛒 *Pedido:*\n   ${detalle}${extLinea?'\n\n🍱 *Extras:*'+extLinea:''}\n\n💰 *Total estimado:* $${total.toLocaleString('es-AR')}\n💳 *Pago:* ${pagoSel}`;
+
+  window._waMsg=encodeURIComponent(msg);
+
+  // Enviar email con mailto si hay correo
+  if (email) {
+    const asunto=encodeURIComponent('Tu pedido — Huerta Sustentable');
+    const cuerpo=encodeURIComponent(
+      `¡Hola ${nombre}! 🌿\n\nRecibimos tu pedido en Huerta Sustentable. Acá va el resumen:\n\n${msg.replace(/%0A/g,'\n').replace(/%2A/g,'*')}\n\nNos contactamos por WhatsApp para confirmar.\n\n¡Gracias por elegir producción local y saludable! 💚\nHuerta Sustentable`
+    );
+    setTimeout(()=>{ window.location.href=`mailto:${email}?subject=${asunto}&body=${cuerpo}`; }, 800);
+  }
+
+  document.getElementById('mainForm').style.display='none';
+  document.getElementById('successScreen').classList.add('show');
+
+  let txt=`Tu pedido fue enviado correctamente${email?` y te mandamos una copia a <strong>${email}</strong>`:''}.`;
+  txt+=`<br><br>Nos comunicamos por WhatsApp para confirmar el pedido y el precio final.`;
+  if (pagoSel==='Transferencia') txt+=`<br><br>Cuando esté confirmado, transferís al alias <strong>mi.perra.venecia</strong> (Banco Nación) y mandás el comprobante al <strong>358 420 9218</strong>.`;
+  document.getElementById('successMsg').innerHTML=txt;
+}
+
+function abrirWhatsApp() {
+  window.open(`https://wa.me/${WHATSAPP}?text=${window._waMsg}`,'_blank');
+}
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+renderGrupo('lista-hoja',       grupoHoja,       'hoja');
+renderGrupo('lista-fruto',      grupoFruto,      'fruto');
+renderGrupo('lista-zapallo',    grupoZapallo,    'zapallo');
+renderGrupo('lista-tallos',     grupoTallos,     'tallos');
+renderGrupo('lista-aromaticas', grupoAromaticas, 'aromaticas');
+renderEnsaladaRows();
+aplicarConfigEscabeche();
+</script>
+</body>
+</html>

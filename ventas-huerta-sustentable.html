@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ventas Huerta Sustentable</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --verde:#2d5a27;--verde-claro:#e8f5e2;--verde-medio:#4a8a3f;
+    --crema:#faf7f2;--crema-oscura:#f0ebe0;
+    --texto:#1a1a1a;--texto-suave:#5a5a5a;--borde:#d4c9b5;--acento:#c8832a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--crema);color:var(--texto);min-height:100vh;}
+
+  header{background:var(--verde);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;}
+  header h1{font-family:'Fraunces',serif;color:#fff;font-size:1.3rem;font-weight:700;}
+  .btn-config-toggle{background:transparent;color:#b8d9b0;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:.3rem .75rem;font-family:'DM Sans',sans-serif;font-size:.78rem;cursor:pointer;transition:background .15s;}
+  .btn-config-toggle:hover{background:rgba(255,255,255,.12);}
+
+  /* ── CONFIG PANEL ───────────────────────────────── */
+  .config-panel{padding:1.25rem 1.5rem 1.5rem;background:#fff;border-bottom:2px solid var(--verde-claro);display:none;}
+  .config-panel.show{display:block;}
+  .config-title{font-family:'Fraunces',serif;color:var(--verde);font-size:1.05rem;margin-bottom:.9rem;}
+  .cfg-tabs{display:flex;gap:.5rem;margin-bottom:1.1rem;flex-wrap:wrap;}
+  .cfg-tab{padding:.4rem 1rem;border:1.5px solid var(--borde);border-radius:8px;background:var(--crema);cursor:pointer;font-size:.83rem;font-weight:500;color:var(--texto-suave);transition:all .15s;}
+  .cfg-tab.active{background:var(--verde);color:#fff;border-color:var(--verde);}
+  .cfg-section{display:none;}
+  .cfg-section.active{display:block;}
+
+  /* sección extras/precios generales */
+  .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;}
+  .config-item label{font-size:.78rem;color:var(--texto-suave);display:block;margin-bottom:.25rem;}
+  .config-item input{padding:.4rem .7rem;border:1.5px solid var(--borde);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.88rem;background:var(--crema);width:100%;}
+  .config-item input:focus{outline:none;border-color:var(--verde-medio);}
+  .config-stock-row{display:flex;align-items:center;gap:.5rem;font-size:.84rem;margin-top:.6rem;}
+
+  /* tabla verduras */
+  .grupo-cfg{font-family:'Fraunces',serif;font-size:.9rem;color:var(--verde);font-weight:600;margin:1rem 0 .3rem;padding-bottom:.25rem;border-bottom:1.5px solid var(--verde-claro);}
+  .col-header{display:flex;align-items:center;gap:.5rem;font-size:.72rem;color:#aaa;padding:.1rem 0 .3rem;}
+  .col-header .ch-nombre{flex:1;}
+  .col-header .ch-precio{width:80px;text-align:right;}
+  .col-header .ch-stock{width:52px;text-align:center;}
+  .verdura-row{display:flex;align-items:center;gap:.5rem;padding:.38rem 0;border-bottom:1px solid var(--crema-oscura);}
+  .verdura-row:last-child{border-bottom:none;}
+  .v-nombre{flex:1;font-size:.84rem;}
+  .v-unidad{font-size:.72rem;color:#bbb;white-space:nowrap;}
+  .v-precio-inp{width:80px;padding:.3rem .5rem;border:1.5px solid var(--borde);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.82rem;background:var(--crema);text-align:right;}
+  .v-precio-inp:focus{outline:none;border-color:var(--verde-medio);}
+  .stock-toggle{width:42px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+  .stock-toggle.on{background:var(--verde);}
+  .stock-toggle.off{background:#ccc;}
+  .stock-toggle::after{content:'';position:absolute;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;}
+  .stock-toggle.on::after{left:20px;}
+  .stock-toggle.off::after{left:3px;}
+  .stock-label{font-size:.68rem;text-align:center;width:42px;flex-shrink:0;color:#888;}
+
+  .btn-cfg{background:var(--verde);color:#fff;border:none;border-radius:8px;padding:.55rem 1.2rem;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;margin-top:1rem;transition:background .15s;}
+  .btn-cfg:hover{background:var(--verde-medio);}
+  .cfg-ok{font-size:.82rem;color:var(--verde);margin-left:.75rem;display:none;}
+
+  /* ── TOPBAR ─────────────────────────────────────── */
+  .topbar{background:#fff;border-bottom:1px solid var(--borde);padding:.75rem 1.5rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;}
+  .stat-pill{background:var(--crema);border:1px solid var(--borde);border-radius:20px;padding:.4rem 1rem;font-size:.85rem;font-weight:500;}
+  .stat-pill strong{color:var(--verde);}
+  .btn-nuevo{background:var(--verde);color:#fff;border:none;border-radius:10px;padding:.6rem 1.2rem;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:background .15s;margin-left:auto;}
+  .btn-nuevo:hover{background:var(--verde-medio);}
+
+  /* ── FILTROS ────────────────────────────────────── */
+  .filtros{padding:1rem 1.5rem 0;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;}
+  .filtro-btn{padding:.45rem 1rem;border:1.5px solid var(--borde);border-radius:20px;font-size:.85rem;font-weight:500;cursor:pointer;background:#fff;color:var(--texto-suave);transition:all .15s;}
+  .filtro-btn.active,.filtro-btn:hover{background:var(--verde);color:#fff;border-color:var(--verde);}
+  .buscar-box{margin-left:auto;}
+  .buscar-box input{padding:.4rem .8rem;border:1.5px solid var(--borde);border-radius:20px;font-family:'DM Sans',sans-serif;font-size:.85rem;background:#fff;width:180px;}
+  .buscar-box input:focus{outline:none;border-color:var(--verde-medio);}
+
+  /* ── PEDIDOS ────────────────────────────────────── */
+  .pedidos-lista{padding:1rem 1.5rem;display:flex;flex-direction:column;gap:.75rem;}
+  .pedido-card{background:#fff;border:1px solid var(--borde);border-radius:14px;padding:1rem 1.25rem;transition:box-shadow .2s;}
+  .pedido-card:hover{box-shadow:0 2px 12px rgba(45,90,39,.08);}
+  .pedido-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.5rem;gap:.5rem;}
+  .pedido-nombre{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:600;color:var(--verde);}
+  .pedido-meta{font-size:.82rem;color:var(--texto-suave);margin-top:2px;}
+  .pedido-precio{font-size:1.1rem;font-weight:700;color:var(--acento);white-space:nowrap;}
+  .pedido-body{font-size:.85rem;color:var(--texto-suave);margin-bottom:.75rem;line-height:1.55;white-space:pre-wrap;}
+  .pedido-footer{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+
+  .badge{padding:.3rem .75rem;border-radius:12px;font-size:.78rem;font-weight:600;}
+  .badge-pendiente{background:#fff3cd;color:#856404;}
+  .badge-preparando{background:#cce5ff;color:#004085;}
+  .badge-entregado{background:var(--verde-claro);color:var(--verde);}
+  .badge-cancelado{background:#f8d7da;color:#721c24;}
+  .badge-pago{background:var(--crema-oscura);color:var(--texto-suave);font-size:.75rem;}
+  .badge-barrio{background:var(--crema-oscura);color:#6b4e2a;font-size:.75rem;}
+  .badge-envio{background:#fff3e0;color:#7a4f0d;font-size:.75rem;}
+
+  .btn-estado{margin-left:auto;padding:.35rem .85rem;border-radius:8px;border:1.5px solid var(--borde);font-family:'DM Sans',sans-serif;font-size:.82rem;cursor:pointer;background:#fff;color:var(--texto);transition:all .15s;font-weight:500;}
+  .btn-estado:hover{background:var(--verde-claro);border-color:var(--verde);}
+  .btn-wa{width:34px;height:34px;border-radius:50%;border:1.5px solid #25d366;background:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;text-decoration:none;transition:background .15s;flex-shrink:0;}
+  .btn-wa:hover{background:#e8fdf0;}
+  .btn-precio{background:var(--acento);color:#fff;border:none;border-radius:8px;padding:.3rem .7rem;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;}
+  .btn-precio:hover{background:#a86922;}
+
+  .empty-state{text-align:center;padding:3rem 1rem;color:var(--texto-suave);}
+  .empty-state div{font-size:3rem;margin-bottom:.5rem;}
+
+  /* ── MODALES ────────────────────────────────────── */
+  .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;padding:1rem;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:16px;padding:1.5rem;max-width:440px;width:100%;border:1px solid var(--borde);max-height:90vh;overflow-y:auto;}
+  .modal h3{font-family:'Fraunces',serif;color:var(--verde);margin-bottom:1rem;font-size:1.1rem;}
+  .estado-opciones{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;}
+  .estado-opt{padding:.65rem 1rem;border:1.5px solid var(--borde);border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:500;transition:all .15s;background:var(--crema);}
+  .estado-opt:hover{border-color:var(--verde);background:var(--verde-claro);}
+  .btn-cerrar-modal{width:100%;padding:.7rem;border:1.5px solid var(--borde);border-radius:10px;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--texto-suave);}
+  .inp{padding:.6rem .9rem;border:1.5px solid var(--borde);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;background:var(--crema);width:100%;}
+  .inp:focus{outline:none;border-color:var(--verde-medio);}
+
+  @media(max-width:500px){
+    .topbar,.filtros,.pedidos-lista,.config-panel{padding-left:1rem;padding-right:1rem;}
+    .buscar-box input{width:130px;}
+    header{padding:1rem;}
+    .config-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 Ventas Huerta Sustentable</h1>
+  <div style="display:flex;align-items:center;gap:.6rem;">
+    <span id="fechaHoy" style="color:#b8d9b0;font-size:.85rem;"></span>
+    <button class="btn-config-toggle" onclick="toggleConfig()">⚙️ Configurar</button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════
+     PANEL DE CONFIGURACIÓN
+══════════════════════════════════════════════════ -->
+<div class="config-panel" id="configPanel">
+  <div class="config-title">✏️ Configuración de precios y stock</div>
+
+  <div class="cfg-tabs">
+    <button class="cfg-tab active" onclick="cfgTab(this,'cfg-extras')">💳 Extras y envío</button>
+    <button class="cfg-tab" onclick="cfgTab(this,'cfg-hoja')">🥬 Hojas</button>
+    <button class="cfg-tab" onclick="cfgTab(this,'cfg-fruto')">🍅 Frutos</button>
+    <button class="cfg-tab" onclick="cfgTab(this,'cfg-zapallo')">🎃 Zapallos</button>
+    <button class="cfg-tab" onclick="cfgTab(this,'cfg-tallos')">🌿 Tallos</button>
+    <button class="cfg-tab" onclick="cfgTab(this,'cfg-aromaticas')">🌱 Aromáticas</button>
+  </div>
+
+  <!-- EXTRAS Y ENVÍO -->
+  <div class="cfg-section active" id="cfg-extras">
+    <div class="config-grid">
+      <div class="config-item"><label>Precio bolsón semanal ($)</label><input type="number" id="cfg-bolson" value="20000"></div>
+      <div class="config-item"><label>Costo de envío ($)</label><input type="number" id="cfg-envio" value="4000"></div>
+      <div class="config-item"><label>Bandeja sopera ($)</label><input type="number" id="cfg-sopera" value="3500"></div>
+      <div class="config-item"><label>Bandeja de ensalada ($)</label><input type="number" id="cfg-ensalada" value="3500"></div>
+      <div class="config-item"><label>Escabeche berenjenas ($)</label><input type="number" id="cfg-escabeche" value="3500"></div>
+    </div>
+    <label class="config-stock-row"><input type="checkbox" id="cfg-ss-escabeche"> &nbsp;Sin stock: Escabeche de berenjenas</label>
+    <label class="config-stock-row"><input type="checkbox" id="cfg-ss-sopera"> &nbsp;Sin stock: Bandeja sopera</label>
+    <label class="config-stock-row"><input type="checkbox" id="cfg-ss-ensalada"> &nbsp;Sin stock: Bandeja de ensalada</label>
+  </div>
+
+  <!-- TABLA VERDURAS (se renderiza por JS en cada grupo) -->
+  <div class="cfg-section" id="cfg-hoja"><div id="tbl-hoja"></div></div>
+  <div class="cfg-section" id="cfg-fruto"><div id="tbl-fruto"></div></div>
+  <div class="cfg-section" id="cfg-zapallo"><div id="tbl-zapallo"></div></div>
+  <div class="cfg-section" id="cfg-tallos"><div id="tbl-tallos"></div></div>
+  <div class="cfg-section" id="cfg-aromaticas"><div id="tbl-aromaticas"></div></div>
+
+  <button class="btn-cfg" onclick="guardarConfig()">💾 Guardar todo</button>
+  <span class="cfg-ok" id="cfg-ok">✓ Guardado</span>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TOPBAR
+══════════════════════════════════════════════════ -->
+<div class="topbar">
+  <div class="stat-pill">Hoy: <strong id="stat-hoy">0</strong> pedidos</div>
+  <div class="stat-pill">Pendientes: <strong id="stat-pendientes">0</strong></div>
+  <div class="stat-pill">Total semana: <strong id="stat-total">$0</strong></div>
+  <button class="btn-nuevo" onclick="abrirModalNuevo()">+ Nuevo pedido</button>
+</div>
+
+<div class="filtros">
+  <button class="filtro-btn active" onclick="filtrar(this,'todos')">Todos</button>
+  <button class="filtro-btn" onclick="filtrar(this,'pendiente')">Pendientes</button>
+  <button class="filtro-btn" onclick="filtrar(this,'preparando')">Preparando</button>
+  <button class="filtro-btn" onclick="filtrar(this,'entregado')">Entregados</button>
+  <div class="buscar-box">
+    <input type="text" id="buscador" placeholder="🔍 Buscar..." oninput="renderPedidos()"/>
+  </div>
+</div>
+
+<div class="pedidos-lista" id="pedidosLista"></div>
+
+<!-- Modal estado -->
+<div class="modal-overlay" id="modalEstado">
+  <div class="modal">
+    <h3>Cambiar estado</h3>
+    <div class="estado-opciones">
+      <div class="estado-opt" onclick="cambiarEstado('pendiente')">⏳ Pendiente</div>
+      <div class="estado-opt" onclick="cambiarEstado('preparando')">👩‍🍳 Preparando</div>
+      <div class="estado-opt" onclick="cambiarEstado('entregado')">✅ Entregado</div>
+      <div class="estado-opt" onclick="cambiarEstado('cancelado')">❌ Cancelado</div>
+    </div>
+    <button class="btn-cerrar-modal" onclick="cerrarModal('modalEstado')">Cerrar</button>
+  </div>
+</div>
+
+<!-- Modal precio -->
+<div class="modal-overlay" id="modalPrecio">
+  <div class="modal">
+    <h3>💰 Actualizar precio final</h3>
+    <p style="font-size:.88rem;color:var(--texto-suave);margin-bottom:.75rem;">Ingresá el precio confirmado para este pedido.</p>
+    <input type="number" id="precio-input" class="inp" placeholder="Ej: 5500" style="margin-bottom:1rem;">
+    <div style="display:flex;gap:.5rem">
+      <button class="btn-cerrar-modal" style="flex:1" onclick="cerrarModal('modalPrecio')">Cancelar</button>
+      <button style="flex:1;padding:.7rem;border:none;background:var(--verde);color:#fff;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer" onclick="guardarPrecio()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nuevo pedido -->
+<div class="modal-overlay" id="modalNuevo">
+  <div class="modal">
+    <h3>✏️ Nuevo pedido manual</h3>
+    <div style="display:flex;flex-direction:column;gap:.6rem">
+      <input type="text"   id="np-nombre"  class="inp" placeholder="Nombre del cliente">
+      <input type="tel"    id="np-tel"     class="inp" placeholder="Teléfono WhatsApp">
+      <input type="email"  id="np-email"   class="inp" placeholder="Email (opcional)">
+      <input type="text"   id="np-dir"     class="inp" placeholder="Dirección / Retiro en huerta">
+      <select id="np-barrio" class="inp">
+        <option value="">Barrio</option>
+        <option>Alberdi</option><option>Banda Norte</option>
+        <option>Sur</option><option>Oeste</option><option>Centro</option>
+      </select>
+      <textarea id="np-pedido" class="inp" rows="3" placeholder="Detalle del pedido"></textarea>
+      <input type="number" id="np-total"   class="inp" placeholder="Total $">
+      <select id="np-pago" class="inp">
+        <option value="Transferencia">Transferencia</option>
+        <option value="Efectivo">Efectivo</option>
+      </select>
+      <select id="np-entrega" class="inp">
+        <option value="Envío">Envío a domicilio</option>
+        <option value="Retiro">Retiro en huerta</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:.5rem;margin-top:1rem">
+      <button class="btn-cerrar-modal" style="flex:1" onclick="cerrarModal('modalNuevo')">Cancelar</button>
+      <button style="flex:1;padding:.7rem;border:none;background:var(--verde);color:#fff;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer" onclick="guardarNuevo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// ✏️  LISTA MAESTRA DE VERDURAS — editar aquí o desde el panel
+// ════════════════════════════════════════════════════════════════
+const VERDURAS = {
+  hoja: [
+    { nombre:'Lechuga crespa',  unidad:'planta', precio:1500, stock:true },
+    { nombre:'Lechuga morada',  unidad:'planta', precio:1500, stock:true },
+    { nombre:'Acelga',          unidad:'atado',  precio:2000, stock:true },
+    { nombre:'Mizuna',          unidad:'atado',  precio:1500, stock:true },
+    { nombre:'Mostaza',         unidad:'atado',  precio:1500, stock:true },
+    { nombre:'Rúcula baby',     unidad:'atado',  precio:1500, stock:true },
+    { nombre:'Achicoria',       unidad:'atado',  precio:1500, stock:true },
+    { nombre:'Repollo blanco',  unidad:'unidad', precio:1500, stock:true },
+  ],
+  fruto: [
+    { nombre:'Tomate cherry',   unidad:'300 gr', precio:2500, stock:true },
+    { nombre:'Pimiento verde',  unidad:'unidad', precio:500,  stock:true },
+    { nombre:'Pimiento rojo',   unidad:'unidad', precio:1000, stock:true },
+    { nombre:'Ajíes picantes',  unidad:'unidad', precio:500,  stock:true },
+    { nombre:'Berenjena',       unidad:'unidad', precio:2000, stock:true },
+    { nombre:'Brócoli',         unidad:'unidad', precio:1500, stock:true },
+    { nombre:'Rabanito',        unidad:'atado',  precio:1500, stock:true },
+  ],
+  zapallo: [
+    { nombre:'Anco',            unidad:'kg',     precio:2000, stock:true },
+    { nombre:'Zapallito verde', unidad:'kg',     precio:1500, stock:true },
+    { nombre:'Zucchini',        unidad:'kg',     precio:1500, stock:true },
+    { nombre:'Calabaza rayada', unidad:'kg',     precio:2000, stock:true },
+    { nombre:'Zapallo criollo', unidad:'kg',     precio:2000, stock:true },
+  ],
+  tallos: [
+    { nombre:'Cebolla de verdeo',unidad:'atado', precio:1500, stock:true },
+    { nombre:'Puerro',          unidad:'atado',  precio:1500, stock:true },
+    { nombre:'Apio',            unidad:'atado',  precio:1500, stock:true },
+    { nombre:'Perejil',         unidad:'atado',  precio:1000, stock:true },
+  ],
+  aromaticas: [
+    { nombre:'Ciboulette',      unidad:'atado',  precio:1000, stock:true },
+    { nombre:'Albahaca',        unidad:'atado',  precio:1000, stock:true },
+    { nombre:'Romero',          unidad:'atado',  precio:1000, stock:true },
+    { nombre:'Tomillo',         unidad:'atado',  precio:1000, stock:true },
+  ],
+};
+
+let CONFIG = {
+  PRECIO_BOLSON:   20000,
+  PRECIO_ENVIO:    4000,
+  PRECIO_SOPERA:   3500, SS_SOPERA:   false,
+  PRECIO_ENSALADA: 3500, SS_ENSALADA: false,
+  PRECIO_ESCABECHE:3500, SS_ESCABECHE:false,
+};
+
+// ── RENDER TABLA VERDURAS EN CONFIG ──────────────────────────────
+const grupoLabels = { hoja:'🥬 Hortalizas de hoja', fruto:'🍅 Hortalizas de fruto', zapallo:'🎃 Zapallos', tallos:'🌿 Tallos y hojas', aromaticas:'🌱 Aromáticas' };
+
+function renderTablasVerduras() {
+  Object.keys(VERDURAS).forEach(key => {
+    const el = document.getElementById('tbl-'+key);
+    el.innerHTML = `
+      <div class="grupo-cfg">${grupoLabels[key]}</div>
+      <div class="col-header">
+        <span class="ch-nombre">Producto</span>
+        <span class="ch-precio">Precio $</span>
+        <span class="ch-stock">Stock</span>
+      </div>
+      ${VERDURAS[key].map((v,i) => `
+        <div class="verdura-row">
+          <span class="v-nombre">${v.nombre} <span class="v-unidad">(${v.unidad})</span></span>
+          <input class="v-precio-inp" type="number" id="vp-${key}-${i}" value="${v.precio}" min="0">
+          <button class="stock-toggle ${v.stock?'on':'off'}" id="vs-${key}-${i}" onclick="toggleStock('${key}',${i},this)" title="${v.stock?'En stock — click para quitar':'Sin stock — click para activar'}"></button>
+        </div>`).join('')}`;
+  });
+}
+
+function toggleStock(key, i, btn) {
+  VERDURAS[key][i].stock = !VERDURAS[key][i].stock;
+  btn.classList.toggle('on',  VERDURAS[key][i].stock);
+  btn.classList.toggle('off', !VERDURAS[key][i].stock);
+  btn.title = VERDURAS[key][i].stock ? 'En stock — click para quitar' : 'Sin stock — click para activar';
+}
+
+// ── TABS CONFIG ───────────────────────────────────────────────────
+function cfgTab(btn, sectionId) {
+  document.querySelectorAll('.cfg-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.cfg-section').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(sectionId).classList.add('active');
+}
+
+// ── GUARDAR CONFIG ────────────────────────────────────────────────
+function guardarConfig() {
+  CONFIG.PRECIO_BOLSON   = parseInt(document.getElementById('cfg-bolson').value)||20000;
+  CONFIG.PRECIO_ENVIO     = parseInt(document.getElementById('cfg-envio').value)||4000;
+  CONFIG.PRECIO_SOPERA    = parseInt(document.getElementById('cfg-sopera').value)||3500;
+  CONFIG.PRECIO_ENSALADA  = parseInt(document.getElementById('cfg-ensalada').value)||3500;
+  CONFIG.PRECIO_ESCABECHE = parseInt(document.getElementById('cfg-escabeche').value)||3500;
+  CONFIG.SS_ESCABECHE = document.getElementById('cfg-ss-escabeche').checked;
+  CONFIG.SS_SOPERA    = document.getElementById('cfg-ss-sopera').checked;
+  CONFIG.SS_ENSALADA  = document.getElementById('cfg-ss-ensalada').checked;
+
+  // leer precios actualizados de cada verdura
+  Object.keys(VERDURAS).forEach(key => {
+    VERDURAS[key].forEach((v,i) => {
+      const inp = document.getElementById(`vp-${key}-${i}`);
+      if (inp) v.precio = parseInt(inp.value)||v.precio;
+    });
+  });
+
+  const ok=document.getElementById('cfg-ok');
+  ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2500);
+}
+
+function toggleConfig() {
+  document.getElementById('configPanel').classList.toggle('show');
+}
+
+// ════════════════════════════════════════════════════════════════
+// PEDIDOS
+// ════════════════════════════════════════════════════════════════
+let pedidos = [
+  { id:1, nombre:'Laura González',  tel:'3584112233', email:'laura@gmail.com',  dir:'Av. San Martín 450', barrio:'Centro',      entrega:'Envío',  pedido:'Bolsón semanal ×2',                                         total:0,    pago:'Transferencia', estado:'pendiente',  fecha:new Date() },
+  { id:2, nombre:'Carlos Romero',   tel:'3584998877', email:'',                 dir:'Retiro en huerta',   barrio:'Banda Norte', entrega:'Retiro', pedido:'Lechuga crespa ×1 planta\nZucchini ×2 kg\nBandeja sopera ×1', total:5500, pago:'Efectivo',     estado:'preparando', fecha:new Date() },
+  { id:3, nombre:'Valeria Torres',  tel:'3584556677', email:'valu@outlook.com', dir:'Rivadavia 890',       barrio:'Sur',         entrega:'Envío',  pedido:'Bolsón semanal ×1\nBandeja de ensalada ×1',                 total:7000, pago:'Transferencia', estado:'entregado',  fecha:new Date(Date.now()-86400000) },
+];
+let nextId=4, filtroActivo='todos', pedidoSelId=null;
+
+function estadoBadge(e){
+  const cls={pendiente:'badge-pendiente',preparando:'badge-preparando',entregado:'badge-entregado',cancelado:'badge-cancelado'};
+  const lbl={pendiente:'⏳ Pendiente',preparando:'👩‍🍳 Preparando',entregado:'✅ Entregado',cancelado:'❌ Cancelado'};
+  return `<span class="badge ${cls[e]||'badge-pendiente'}">${lbl[e]||e}</span>`;
+}
+
+function renderPedidos() {
+  const busq=document.getElementById('buscador').value.toLowerCase();
+  const lista=document.getElementById('pedidosLista');
+  const filtrados=pedidos.filter(p=>{
+    const mF=filtroActivo==='todos'||p.estado===filtroActivo;
+    const mB=p.nombre.toLowerCase().includes(busq)||p.tel.includes(busq)||(p.barrio||'').toLowerCase().includes(busq);
+    return mF&&mB;
+  });
+  if (!filtrados.length){
+    lista.innerHTML=`<div class="empty-state"><div>📭</div><p>No hay pedidos.</p></div>`;
+    actualizarStats(); return;
+  }
+  lista.innerHTML=filtrados.map(p=>`
+    <div class="pedido-card">
+      <div class="pedido-header">
+        <div>
+          <div class="pedido-nombre">${p.nombre}</div>
+          <div class="pedido-meta">📱 ${p.tel}${p.email?' · 📧 '+p.email:''}</div>
+          <div class="pedido-meta">📍 ${p.dir}${p.barrio?' — '+p.barrio:''}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="pedido-precio">${p.total>0?'$'+p.total.toLocaleString('es-AR'):'a confirmar'}</div>
+          <button class="btn-precio" onclick="abrirModalPrecio(${p.id})" style="margin-top:4px">✏️ precio</button>
+        </div>
+      </div>
+      <div class="pedido-body">🛒 ${p.pedido}</div>
+      <div class="pedido-footer">
+        ${estadoBadge(p.estado)}
+        ${p.pago?`<span class="badge badge-pago">💳 ${p.pago}</span>`:''}
+        ${p.barrio?`<span class="badge badge-barrio">📍 ${p.barrio}</span>`:''}
+        ${p.entrega?`<span class="badge badge-envio">${p.entrega==='Retiro'?'🌿 Retiro':'🛵 Envío'}</span>`:''}
+        <a class="btn-wa" href="https://wa.me/549${p.tel}?text=${encodeURIComponent('¡Hola '+p.nombre.split(' ')[0]+'! 🌿 Te escribo por tu pedido de Huerta Sustentable.')}" target="_blank">💬</a>
+        <button class="btn-estado" onclick="abrirModalEstado(${p.id})">Cambiar estado</button>
+      </div>
+    </div>`).join('');
+  actualizarStats();
+}
+
+function actualizarStats(){
+  const hoy=pedidos.filter(p=>new Date(p.fecha).toDateString()===new Date().toDateString());
+  const pend=pedidos.filter(p=>p.estado==='pendiente'||p.estado==='preparando');
+  const tot=pedidos.filter(p=>p.estado!=='cancelado').reduce((s,p)=>s+p.total,0);
+  document.getElementById('stat-hoy').textContent=hoy.length;
+  document.getElementById('stat-pendientes').textContent=pend.length;
+  document.getElementById('stat-total').textContent='$'+tot.toLocaleString('es-AR');
+}
+
+function filtrar(btn,estado){
+  document.querySelectorAll('.filtro-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); filtroActivo=estado; renderPedidos();
+}
+
+function abrirModalEstado(id){pedidoSelId=id;document.getElementById('modalEstado').classList.add('show');}
+function cambiarEstado(s){
+  const p=pedidos.find(x=>x.id===pedidoSelId);if(p)p.estado=s;
+  cerrarModal('modalEstado');renderPedidos();
+}
+function abrirModalPrecio(id){pedidoSelId=id;document.getElementById('modalPrecio').classList.add('show');}
+function guardarPrecio(){
+  const val=parseFloat(document.getElementById('precio-input').value)||0;
+  const p=pedidos.find(x=>x.id===pedidoSelId);if(p)p.total=val;
+  document.getElementById('precio-input').value='';
+  cerrarModal('modalPrecio');renderPedidos();
+}
+function abrirModalNuevo(){document.getElementById('modalNuevo').classList.add('show');}
+function guardarNuevo(){
+  const nombre=document.getElementById('np-nombre').value.trim();
+  const tel=document.getElementById('np-tel').value.trim();
+  if(!nombre||!tel){alert('Nombre y teléfono son obligatorios.');return;}
+  pedidos.unshift({
+    id:nextId++,nombre,tel,
+    email:document.getElementById('np-email').value.trim(),
+    dir:document.getElementById('np-dir').value.trim(),
+    barrio:document.getElementById('np-barrio').value,
+    pedido:document.getElementById('np-pedido').value.trim()||'Sin detalle',
+    total:parseFloat(document.getElementById('np-total').value)||0,
+    pago:document.getElementById('np-pago').value,
+    entrega:document.getElementById('np-entrega').value,
+    estado:'pendiente',fecha:new Date()
+  });
+  ['np-nombre','np-tel','np-email','np-dir','np-pedido','np-total'].forEach(id=>document.getElementById(id).value='');
+  cerrarModal('modalNuevo');renderPedidos();
+}
+function cerrarModal(id){document.getElementById(id).classList.remove('show');}
+
+// ── INIT ──────────────────────────────────────────────────────────
+const ds=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const ms=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const hoy=new Date();
+document.getElementById('fechaHoy').textContent=`${ds[hoy.getDay()]} ${hoy.getDate()} ${ms[hoy.getMonth()]}`;
+renderTablasVerduras();
+renderPedidos();
+</script>
+</body>
+</html>

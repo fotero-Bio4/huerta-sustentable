@@ -1,0 +1,9 @@
+.env
+node_modules/
+.netlify/
+
+# Excel base / fuentes locales (no publicar en el sitio)
+*.xlsx
+*.xls
+~$*
+RPA0035_HuertaSustentable.zip

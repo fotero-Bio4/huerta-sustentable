@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Huerta Sustentable</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--verde:#2d5a27;--verde-claro:#e8f5e2;--verde-medio:#4a8a3f;--crema:#faf7f2;--crema-oscura:#f0ebe0;--texto:#1a1a1a;--texto-suave:#5a5a5a;--borde:#d4c9b5;--acento:#c8832a;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--crema);color:var(--texto);min-height:100vh;}
+  header{background:var(--verde);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+  header h1{font-family:'Fraunces',serif;color:#fff;font-size:1.25rem;font-weight:700;}
+  .hdr-right{display:flex;align-items:center;gap:.6rem;}
+  .hdr-badge{color:#b8d9b0;font-size:.85rem;}
+  .btn-ghost{background:transparent;color:#b8d9b0;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:.3rem .75rem;font-family:'DM Sans',sans-serif;font-size:.78rem;cursor:pointer;}
+  .btn-ghost:hover{background:rgba(255,255,255,.12);}
+  .hidden{display:none!important;}
+
+  /* LOGIN */
+  .login-wrap{max-width:380px;margin:4rem auto;padding:0 1rem;}
+  .login-card{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:2rem 1.75rem;}
+  .login-card h2{font-family:'Fraunces',serif;color:var(--verde);font-size:1.3rem;margin-bottom:.3rem;}
+  .login-card p{color:var(--texto-suave);font-size:.85rem;margin-bottom:1.25rem;}
+  .login-card label{display:block;font-size:.82rem;color:var(--texto-suave);margin:.75rem 0 .3rem;}
+  .inp{width:100%;padding:.65rem .9rem;border:1.5px solid var(--borde);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.95rem;background:var(--crema);}
+  .inp:focus{outline:none;border-color:var(--verde-medio);background:#fff;}
+  .btn{background:var(--verde);color:#fff;border:none;border-radius:10px;padding:.7rem 1.2rem;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;transition:background .15s;}
+  .btn:hover{background:var(--verde-medio);} .btn:disabled{opacity:.6;cursor:not-allowed;}
+  .btn-block{width:100%;margin-top:1.25rem;}
+  .msg{border-radius:10px;padding:.65rem .9rem;font-size:.85rem;margin-top:1rem;}
+  .msg.error{background:#f8d7da;color:#721c24;} .msg.ok{background:var(--verde-claro);color:var(--verde);}
+  .spinner{display:inline-block;width:1em;height:1em;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:.4rem;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* NAV */
+  .nav{background:#fff;border-bottom:1px solid var(--borde);padding:.5rem 1rem;display:flex;gap:.4rem;overflow-x:auto;}
+  .nav button{padding:.5rem .9rem;border:1.5px solid var(--borde);border-radius:20px;background:var(--crema);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:500;color:var(--texto-suave);white-space:nowrap;}
+  .nav button.active{background:var(--verde);color:#fff;border-color:var(--verde);}
+
+  .topbar{padding:.85rem 1.5rem 0;display:flex;gap:.6rem;flex-wrap:wrap;}
+  .stat-pill{background:#fff;border:1px solid var(--borde);border-radius:20px;padding:.4rem 1rem;font-size:.85rem;}
+  .stat-pill strong{color:var(--verde);}
+
+  .panel{display:none;padding:1rem 1.5rem 3rem;max-width:900px;margin:0 auto;} .panel.active{display:block;}
+
+  /* FILTROS */
+  .filtros{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem;}
+  .filtro-btn{padding:.4rem .9rem;border:1.5px solid var(--borde);border-radius:20px;font-size:.83rem;cursor:pointer;background:#fff;color:var(--texto-suave);}
+  .filtro-btn.active{background:var(--verde);color:#fff;border-color:var(--verde);}
+  .buscar{margin-left:auto;} .buscar input{padding:.4rem .8rem;border:1.5px solid var(--borde);border-radius:20px;font-family:'DM Sans',sans-serif;font-size:.85rem;background:#fff;}
+
+  /* PEDIDOS */
+  .pedido-card{background:#fff;border:1px solid var(--borde);border-radius:14px;padding:1rem 1.25rem;margin-bottom:.75rem;}
+  .pedido-header{display:flex;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;}
+  .pedido-nombre{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:600;color:var(--verde);}
+  .pedido-meta{font-size:.82rem;color:var(--texto-suave);margin-top:2px;}
+  .pedido-precio{font-size:1.1rem;font-weight:700;color:var(--acento);white-space:nowrap;}
+  .pedido-body{font-size:.85rem;color:var(--texto-suave);margin-bottom:.7rem;line-height:1.55;white-space:pre-wrap;}
+  .pedido-footer{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+  .badge{padding:.3rem .7rem;border-radius:12px;font-size:.76rem;font-weight:600;}
+  .badge-pendiente{background:#fff3cd;color:#856404;} .badge-preparando{background:#cce5ff;color:#004085;}
+  .badge-entregado{background:var(--verde-claro);color:var(--verde);} .badge-cancelado{background:#f8d7da;color:#721c24;}
+  .badge-sec{background:var(--crema-oscura);color:#6b4e2a;font-size:.74rem;}
+  .mini{padding:.3rem .7rem;border-radius:8px;border:1.5px solid var(--borde);background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;}
+  .mini:hover{background:var(--verde-claro);border-color:var(--verde);}
+  .btn-wa{width:32px;height:32px;border-radius:50%;border:1.5px solid #25d366;background:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;}
+  .empty{text-align:center;padding:2.5rem 1rem;color:var(--texto-suave);} .empty div{font-size:2.5rem;margin-bottom:.4rem;}
+
+  /* TABLAS */
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--borde);border-radius:12px;overflow:hidden;font-size:.86rem;}
+  th,td{text-align:left;padding:.55rem .8rem;border-bottom:1px solid var(--crema-oscura);}
+  th{background:var(--verde-claro);color:var(--verde);font-weight:600;}
+  td.num,th.num{text-align:right;}
+  .grupo-h{font-family:'Fraunces',serif;color:var(--verde);margin:1.25rem 0 .4rem;font-size:.98rem;}
+
+  /* CONFIG */
+  .cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:1rem;}
+  .cfg-item label{font-size:.78rem;color:var(--texto-suave);display:block;margin-bottom:.25rem;}
+  .cfg-item input{width:100%;padding:.45rem .7rem;border:1.5px solid var(--borde);border-radius:8px;background:var(--crema);font-family:'DM Sans',sans-serif;}
+  .vrow{display:flex;align-items:center;gap:.6rem;padding:.4rem 0;border-bottom:1px solid var(--crema-oscura);}
+  .vrow .vn{flex:1;font-size:.85rem;} .vrow .vn small{color:#bbb;}
+  .vrow input[type=number]{width:90px;padding:.3rem .5rem;border:1.5px solid var(--borde);border-radius:7px;text-align:right;background:var(--crema);}
+  .toggle{width:42px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+  .toggle.on{background:var(--verde);} .toggle.off{background:#ccc;}
+  .toggle::after{content:'';position:absolute;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;}
+  .toggle.on::after{left:20px;} .toggle.off::after{left:3px;}
+
+  /* MODALES */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;padding:1rem;}
+  .overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:16px;padding:1.5rem;max-width:420px;width:100%;}
+  .modal h3{font-family:'Fraunces',serif;color:var(--verde);margin-bottom:1rem;}
+  .estado-opt{padding:.6rem 1rem;border:1.5px solid var(--borde);border-radius:10px;cursor:pointer;margin-bottom:.5rem;background:var(--crema);}
+  .estado-opt:hover{border-color:var(--verde);background:var(--verde-claro);}
+  .pdv-box{background:#fff;border:1px solid var(--borde);border-radius:14px;padding:1.5rem;}
+  .pdv-row{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;}
+  .pdv-row .f{flex:1;min-width:140px;}
+  @media(max-width:560px){.cfg-grid{grid-template-columns:1fr;}.panel{padding:1rem;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌿 Admin · Huerta Sustentable</h1>
+  <div class="hdr-right">
+    <span class="hdr-badge" id="hdrBadge"></span>
+    <button class="btn-ghost hidden" id="btnSalir" onclick="logout()">Salir</button>
+  </div>
+</header>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="screenLogin">
+  <div class="login-card">
+    <h2>Ingresá</h2>
+    <p>Panel de gestión de pedidos.</p>
+    <label>Mail</label>
+    <input class="inp" type="email" id="inMail" placeholder="tu@mail.com" autocomplete="username">
+    <label>Contraseña</label>
+    <input class="inp" type="password" id="inPss" placeholder="••••••" autocomplete="current-password">
+    <button class="btn btn-block" id="btnLogin" onclick="login()">Ingresar</button>
+    <div class="msg error hidden" id="msgLogin"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="screenApp" class="hidden">
+  <nav class="nav">
+    <button class="active" onclick="tab(this,'pedidos')">📋 Pedidos</button>
+    <button onclick="tab(this,'detalle')">🌱 Detalle por verdura</button>
+    <button onclick="tab(this,'cosecha')">🧺 Cosecha</button>
+    <button onclick="tab(this,'config')">⚙️ Precios y stock</button>
+    <button onclick="tab(this,'pdv')">📤 Exportar PDV</button>
+  </nav>
+
+  <div class="topbar">
+    <div class="stat-pill">Pedidos: <strong id="stHoy">0</strong></div>
+    <div class="stat-pill">Pendientes: <strong id="stPend">0</strong></div>
+    <div class="stat-pill">Total: <strong id="stTotal">$0</strong></div>
+    <button class="mini" style="margin-left:auto" onclick="recargar()">🔄 Actualizar</button>
+  </div>
+
+  <!-- PEDIDOS -->
+  <div class="panel active" id="panel-pedidos">
+    <div class="filtros">
+      <button class="filtro-btn active" onclick="setFiltro(this,'todos')">Todos</button>
+      <button class="filtro-btn" onclick="setFiltro(this,'pendiente')">Pendientes</button>
+      <button class="filtro-btn" onclick="setFiltro(this,'preparando')">Preparando</button>
+      <button class="filtro-btn" onclick="setFiltro(this,'entregado')">Entregados</button>
+      <div class="buscar"><input id="buscar" placeholder="🔍 Buscar…" oninput="renderPedidos()"></div>
+    </div>
+    <div id="listaPedidos"></div>
+  </div>
+
+  <!-- DETALLE -->
+  <div class="panel" id="panel-detalle">
+    <p style="color:var(--texto-suave);font-size:.85rem;margin-bottom:.75rem;">Cantidad total a cosechar por verdura (suma de todos los pedidos no cancelados).</p>
+    <div id="tablaDetalle"></div>
+  </div>
+
+  <!-- COSECHA -->
+  <div class="panel" id="panel-cosecha">
+    <div id="resumenCosecha"></div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="panel" id="panel-config">
+    <h3 class="grupo-h">💳 Extras, bolsón y envío</h3>
+    <div class="cfg-grid" id="cfgGrid"></div>
+    <h3 class="grupo-h">🥬 Precios y stock por verdura</h3>
+    <div id="cfgVerduras"></div>
+    <button class="btn" id="btnGuardarCfg" onclick="guardarConfig()" style="margin-top:1.25rem">💾 Guardar cambios</button>
+    <span class="msg ok hidden" id="msgCfg" style="display:inline-block">✓ Guardado</span>
+  </div>
+
+  <!-- PDV -->
+  <div class="panel" id="panel-pdv">
+    <div class="pdv-box">
+      <h3 class="grupo-h" style="margin-top:0">📤 Exportar pedido para el ERP (PDV)</h3>
+      <p style="color:var(--texto-suave);font-size:.85rem;margin-bottom:1rem;">Genera el archivo <strong>.xls</strong> con los pedidos del rango de fechas, listo para importar al ERP. Una fila por ítem. Los códigos se toman de la hoja <strong>Mapeo PDV</strong>.</p>
+      <div class="pdv-row">
+        <div class="f"><label style="font-size:.8rem;color:var(--texto-suave)">Desde</label><input class="inp" type="date" id="pdvDesde"></div>
+        <div class="f"><label style="font-size:.8rem;color:var(--texto-suave)">Hasta</label><input class="inp" type="date" id="pdvHasta"></div>
+        <button class="btn" id="btnPdv" onclick="exportarPDV()">Generar .xls</button>
+      </div>
+      <div class="msg hidden" id="msgPdv"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal estado -->
+<div class="overlay" id="ovEstado"><div class="modal">
+  <h3>Cambiar estado</h3>
+  <div class="estado-opt" onclick="setEstado('pendiente')">⏳ Pendiente</div>
+  <div class="estado-opt" onclick="setEstado('preparando')">👩‍🍳 Preparando</div>
+  <div class="estado-opt" onclick="setEstado('entregado')">✅ Entregado</div>
+  <div class="estado-opt" onclick="setEstado('cancelado')">❌ Cancelado</div>
+  <button class="mini" style="width:100%;margin-top:.5rem" onclick="cerrar('ovEstado')">Cerrar</button>
+</div></div>
+
+<!-- Modal precio -->
+<div class="overlay" id="ovPrecio"><div class="modal">
+  <h3>💰 Precio final confirmado</h3>
+  <input class="inp" type="number" id="inPrecio" placeholder="Ej: 25500" style="margin-bottom:1rem">
+  <div style="display:flex;gap:.5rem">
+    <button class="mini" style="flex:1" onclick="cerrar('ovPrecio')">Cancelar</button>
+    <button class="btn" style="flex:1" onclick="setPrecio()">Guardar</button>
+  </div>
+</div></div>
+
+<script src="/admin.js"></script>
+</body>
+</html>

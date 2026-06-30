@@ -1,0 +1,12 @@
+{
+  "name": "huerta-sustentable",
+  "version": "1.0.0",
+  "description": "App web de pedidos Huerta Sustentable - BIO4 Rio Cuarto. Formulario de pedidos + panel admin con Excel SharePoint como base de datos (Microsoft Graph) y export PDV para el ERP.",
+  "private": true,
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "xlsx": "0.18.5"
+  }
+}
