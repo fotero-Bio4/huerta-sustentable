@@ -43,8 +43,17 @@ async function recargar() {
   const d = await r.json();
   if (r.ok && d.ok) aplicarData(d);
 }
-function aplicarData(d){ DATA = { pedidos:d.pedidos||[], cosecha:d.cosecha||{verduras:[],extras:[],bolsones:0}, catalogo:d.catalogo||[], config:d.config||{}, fechaCosecha:d.fechaCosecha||'' };
+function aplicarData(d){ DATA = { pedidos:d.pedidos||[], cosecha:d.cosecha||{verduras:[],extras:[],bolsones:0}, catalogo:d.catalogo||[], config:d.config||{}, fechaCosecha:d.fechaCosecha||'', cosechas:d.cosechas||[] };
+  poblarCosechaSelects();
   renderPedidos(); renderDetalle(); renderCosecha(); renderConfig(); stats(); }
+
+// Rellena los <select> de cosecha (Pedidos/Detalle/Cosecha) con las fechas guardadas.
+function fmtFecha(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+function poblarCosechaSelects(){
+  const opts = '<option value="">Todas las cosechas</option>' +
+    (DATA.cosechas||[]).map(f=>`<option value="${f}">${fmtFecha(f)}</option>`).join('');
+  ['pedCosecha','detCosecha','cosCosecha'].forEach(id=>{ const s=$(id); if(s){ const v=s.value; s.innerHTML=opts; s.value=v; } });
+}
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
 function tab(btn, name){
@@ -66,13 +75,18 @@ const ESTADO_LBL = { pendiente:'⏳ Pendiente de Aprobación', confirmado:'✅ C
 function estadoBadge(e){
   return `<span class="badge badge-${e}">${ESTADO_LBL[e]||e}</span>`;
 }
-function renderPedidos(){
+// Predicado de filtro de la lista de pedidos: estado + búsqueda + fecha + cosecha.
+function pedidoPasaFiltro(p){
   const q = ($('buscar').value||'').toLowerCase();
-  const lista = DATA.pedidos.filter(p=>{
-    const mf = filtro==='todos' || p.estado===filtro;
-    const mb = p.nombre.toLowerCase().includes(q) || (p.tel||'').includes(q) || (p.barrio||'').toLowerCase().includes(q);
-    return mf && mb;
-  });
+  const desde=$('pedDesde').value, hasta=$('pedHasta').value, cosecha=$('pedCosecha').value;
+  const mf = filtro==='todos' || p.estado===filtro;
+  const mb = p.nombre.toLowerCase().includes(q) || (p.tel||'').includes(q) || (p.barrio||'').toLowerCase().includes(q);
+  const md = (!desde || (p.fechaISO && p.fechaISO>=desde)) && (!hasta || (p.fechaISO && p.fechaISO<=hasta));
+  const mc = !cosecha || p.fechaCosechaISO===cosecha;
+  return mf && mb && md && mc;
+}
+function renderPedidos(){
+  const lista = DATA.pedidos.filter(pedidoPasaFiltro);
   const cont = $('listaPedidos');
   if (!lista.length){ cont.innerHTML='<div class="empty"><div>📭</div><p>No hay pedidos.</p></div>'; updateBulkCount(); return; }
   cont.innerHTML = lista.map(p=>{
@@ -112,11 +126,8 @@ function renderPedidos(){
 // ── SELECCIÓN MASIVA ──────────────────────────────────────────────────────────
 function toggleSel(row,on){ if(on) seleccion.add(row); else seleccion.delete(row); updateBulkCount(); }
 function toggleSelAll(cb){
-  const q = ($('buscar').value||'').toLowerCase();
-  DATA.pedidos.forEach(p=>{
-    const mf = filtro==='todos' || p.estado===filtro;
-    const mb = p.nombre.toLowerCase().includes(q) || (p.tel||'').includes(q) || (p.barrio||'').toLowerCase().includes(q);
-    if (mf && mb){ if(cb.checked) seleccion.add(p.excelRow); else seleccion.delete(p.excelRow); }
+  DATA.pedidos.filter(pedidoPasaFiltro).forEach(p=>{
+    if(cb.checked) seleccion.add(p.excelRow); else seleccion.delete(p.excelRow);
   });
   renderPedidos();
 }
@@ -168,16 +179,17 @@ function parseDetalle(text){
   });
 }
 function catIndex(){ const idx={}; (DATA.catalogo||[]).forEach(v=>{ idx[v.nombre.toLowerCase()]={nombre:v.nombre,grupo:v.grupo,unidad:v.unidad}; }); return idx; }
-function pedidosEnRango(desde,hasta){
+function pedidosEnRango(desde,hasta,cosecha){
   return DATA.pedidos.filter(p=>{
     if(desde && (!p.fechaISO || p.fechaISO<desde)) return false;
     if(hasta && (!p.fechaISO || p.fechaISO>hasta)) return false;
+    if(cosecha && p.fechaCosechaISO!==cosecha) return false;
     return true;
   });
 }
-function computeCosecha(desde,hasta){
+function computeCosecha(desde,hasta,cosecha){
   const catIdx=catIndex(), verduras={}, extras={}; let bolsones=0;
-  for(const p of pedidosEnRango(desde,hasta)){
+  for(const p of pedidosEnRango(desde,hasta,cosecha)){
     if(p.estado==='cancelado') continue;
     bolsones += p.bolsones||0;
     for(const it of parseDetalle(p.detalle)){
@@ -192,11 +204,15 @@ function computeCosecha(desde,hasta){
     verduras:Object.values(verduras).filter(v=>v.cantidad>0).sort((a,b)=>a.grupo.localeCompare(b.grupo)||a.nombre.localeCompare(b.nombre)),
     extras:Object.entries(extras).filter(([,c])=>c>0).map(([nombre,cantidad])=>({nombre,cantidad})) };
 }
-function limpiarFecha(pref){ $(pref+'Desde').value=''; $(pref+'Hasta').value=''; if(pref==='det') renderDetalle(); else renderCosecha(); }
+function limpiarFecha(pref){
+  $(pref+'Desde').value=''; $(pref+'Hasta').value='';
+  const sel=$(pref+'Cosecha'); if(sel) sel.value='';
+  if(pref==='ped') renderPedidos(); else if(pref==='det') renderDetalle(); else renderCosecha();
+}
 
 // ── DETALLE POR VERDURA ──────────────────────────────────────────────────────────
 function renderDetalle(){
-  const v = computeCosecha($('detDesde').value, $('detHasta').value).verduras;
+  const v = computeCosecha($('detDesde').value, $('detHasta').value, $('detCosecha').value).verduras;
   if (!v.length){ $('tablaDetalle').innerHTML='<div class="empty"><div>🌱</div><p>Sin verduras pedidas en el rango.</p></div>'; return; }
   let html='<table><thead><tr><th>Verdura</th><th>Grupo</th><th>Unidad</th><th class="num">Cantidad</th></tr></thead><tbody>';
   v.forEach(x=>{ html+=`<tr><td>${x.nombre}</td><td>${x.grupo}</td><td>${x.unidad||''}</td><td class="num"><strong>${x.cantidad}</strong></td></tr>`; });
@@ -206,7 +222,7 @@ function renderDetalle(){
 
 // ── COSECHA ────────────────────────────────────────────────────────────────────
 function renderCosecha(){
-  const c = computeCosecha($('cosDesde').value, $('cosHasta').value);
+  const c = computeCosecha($('cosDesde').value, $('cosHasta').value, $('cosCosecha').value);
   let html = `<div class="stat-pill" style="display:inline-block;margin-bottom:1rem">🧺 Bolsones semanales: <strong>${c.bolsones||0}</strong></div>`;
   const grupos = {};
   (c.verduras||[]).forEach(v=>{ (grupos[v.grupo]=grupos[v.grupo]||[]).push(v); });
@@ -222,6 +238,43 @@ function renderCosecha(){
   }
   if (!(c.verduras||[]).length && !(c.extras||[]).length && !c.bolsones) html += '<div class="empty"><div>🧺</div><p>Sin datos de cosecha.</p></div>';
   $('resumenCosecha').innerHTML = html;
+}
+
+// ── IMPRESIÓN (Detalle / Cosecha) ─────────────────────────────────────────────────
+function imprimir(tipo){
+  const desde=$(tipo+'Desde').value, hasta=$(tipo+'Hasta').value, cosecha=$(tipo+'Cosecha').value;
+  const c = computeCosecha(desde, hasta, cosecha);
+  const filtroTxt = [ cosecha?'Cosecha del '+fmtFecha(cosecha):'', desde?'Desde '+fmtFecha(desde):'', hasta?'Hasta '+fmtFecha(hasta):'' ]
+    .filter(Boolean).join(' · ') || 'Todos los pedidos';
+  let titulo, cuerpo;
+  if (tipo==='det'){
+    titulo='Detalle por verdura — a cosechar';
+    cuerpo = c.verduras.length
+      ? '<table><thead><tr><th>Verdura</th><th>Grupo</th><th>Unidad</th><th class="num">Cantidad</th></tr></thead><tbody>'
+        + c.verduras.map(x=>`<tr><td>${x.nombre}</td><td>${x.grupo}</td><td>${x.unidad||''}</td><td class="num">${x.cantidad}</td></tr>`).join('')
+        + '</tbody></table>'
+      : '<p>Sin verduras para cosechar.</p>';
+  } else {
+    titulo='Cosecha — resumen';
+    cuerpo = `<p><strong>🧺 Bolsones semanales: ${c.bolsones||0}</strong></p>`;
+    const grupos={}; c.verduras.forEach(v=>{ (grupos[v.grupo]=grupos[v.grupo]||[]).push(v); });
+    Object.keys(grupos).forEach(g=>{
+      cuerpo += `<h3>${g}</h3><table><tbody>`
+        + grupos[g].map(v=>`<tr><td>${v.nombre}</td><td class="num">${v.cantidad} ${v.unidad||''}</td></tr>`).join('')
+        + '</tbody></table>';
+    });
+    if (c.extras.length) cuerpo += '<h3>🍱 Extras</h3><table><tbody>'
+      + c.extras.map(e=>`<tr><td>${e.nombre}</td><td class="num">${e.cantidad}</td></tr>`).join('') + '</tbody></table>';
+    if (!c.verduras.length && !c.extras.length && !c.bolsones) cuerpo='<p>Sin datos de cosecha.</p>';
+  }
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${titulo}</title>
+    <style>body{font-family:Arial,Helvetica,sans-serif;padding:1.5rem;color:#1a1a1a}h1{font-size:1.3rem;color:#2d5a27;margin-bottom:.2rem}h3{color:#2d5a27;margin:1rem 0 .3rem}.sub{color:#555;font-size:.9rem;margin-bottom:1rem}table{width:100%;border-collapse:collapse;margin-bottom:.5rem}th,td{border:1px solid #ccc;padding:.4rem .6rem;text-align:left;font-size:.9rem}th{background:#e8f5e2}.num{text-align:right}</style>
+    </head><body><h1>🌱 Huerta Sustentable — ${titulo}</h1>
+    <div class="sub">${filtroTxt}</div>${cuerpo}
+    <script>window.onload=function(){window.print();}<\/script></body></html>`;
+  const w = window.open('', '_blank');
+  if (!w){ alert('Permití las ventanas emergentes para imprimir.'); return; }
+  w.document.write(html); w.document.close();
 }
 
 // ── CONFIG (precios / stock) ─────────────────────────────────────────────────────

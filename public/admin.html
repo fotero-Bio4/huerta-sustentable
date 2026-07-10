@@ -157,6 +157,12 @@
       <button class="filtro-btn" onclick="setFiltro(this,'cancelado')">Cancelados</button>
       <div class="buscar"><input id="buscar" placeholder="🔍 Buscar…" oninput="renderPedidos()"></div>
     </div>
+    <div class="fecha-filtro">
+      <div><label>Desde</label><input type="date" id="pedDesde" onchange="renderPedidos()"></div>
+      <div><label>Hasta</label><input type="date" id="pedHasta" onchange="renderPedidos()"></div>
+      <div><label>Cosecha</label><select id="pedCosecha" onchange="renderPedidos()"></select></div>
+      <button class="mini" onclick="limpiarFecha('ped')">Limpiar</button>
+    </div>
     <div class="bulk-bar">
       <label style="display:flex;align-items:center;gap:.4rem;font-size:.83rem;cursor:pointer"><input type="checkbox" id="selAll" onclick="toggleSelAll(this)"> Seleccionar todos</label>
       <select id="bulkEstado">
@@ -178,7 +184,9 @@
     <div class="fecha-filtro">
       <div><label>Desde</label><input type="date" id="detDesde" onchange="renderDetalle()"></div>
       <div><label>Hasta</label><input type="date" id="detHasta" onchange="renderDetalle()"></div>
+      <div><label>Cosecha</label><select id="detCosecha" onchange="renderDetalle()"></select></div>
       <button class="mini" onclick="limpiarFecha('det')">Limpiar</button>
+      <button class="mini" onclick="imprimir('det')">🖨️ Imprimir</button>
     </div>
     <div id="tablaDetalle"></div>
   </div>
@@ -189,7 +197,9 @@
     <div class="fecha-filtro">
       <div><label>Desde</label><input type="date" id="cosDesde" onchange="renderCosecha()"></div>
       <div><label>Hasta</label><input type="date" id="cosHasta" onchange="renderCosecha()"></div>
+      <div><label>Cosecha</label><select id="cosCosecha" onchange="renderCosecha()"></select></div>
       <button class="mini" onclick="limpiarFecha('cos')">Limpiar</button>
+      <button class="mini" onclick="imprimir('cos')">🖨️ Imprimir</button>
     </div>
     <div id="resumenCosecha"></div>
   </div>
