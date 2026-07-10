@@ -174,22 +174,46 @@ function parseDetalle(text) {
 
 // ── Stock disponible (hoja "StockDisponible") ──────────────────────────────────
 // Layout agrupado por categoría: filas de producto = "Producto | Unidad |
-// Cant. cosechada | Precio | Total". Devuelve el mapa nombre→cosechada y el
-// bolsón por separado. Saltea títulos de sección, encabezados y SUBTOTAL.
+// Cant. cosechada | Precio | Total". Devuelve el mapa nombre→cosechada (incluye
+// extras), el bolsón por separado y la fecha de cosecha (celda B1, fila "COSECHA").
 function parseStockDisponible(rows) {
   const cosechada = {};
-  let bolson = 0;
+  let bolson = 0, fecha = '';
   for (const r of (rows || [])) {
     const nombre = String(r[0] ?? '').trim();
     if (!nombre) continue;
     const nl = nombre.toLowerCase();
+    if (nl === 'cosecha') { fecha = anyToISO(r[1]); continue; }  // B1 = fecha de cosecha
     if (nl === 'producto' || nl.startsWith('subtotal')) continue;
     const cant = Number(r[2]);                 // col C = Cant. cosechada
     if (!Number.isFinite(cant)) continue;      // títulos de sección tienen col C vacía
     if (nl === 'bolsón semanal' || nl === 'bolson semanal') { bolson = cant; continue; }
     cosechada[nl] = cant;
   }
-  return { cosechada, bolson };
+  return { cosechada, bolson, fecha };
+}
+
+// Suma lo ya pedido por producto para una fecha de cosecha dada, leyendo la hoja
+// "Pedidos" (col I=detalle, M=extras, G=bolsones, Q=estado, T=fecha de cosecha).
+// Si fechaISO es '' cuenta todos los pedidos no cancelados. Devuelve mapas en minúscula.
+const PEDIDO_COL = { nombre: 0, bolsones: 6, detalle: 8, extras: 12, estado: 16, fechaCosecha: 19 };
+function pedidasPorCosecha(rows, fechaISO) {
+  let hIdx = (rows || []).findIndex(r => String(r[0] ?? '').trim().toLowerCase() === 'nombre');
+  if (hIdx === -1) hIdx = 3;
+  const verduras = {}, extras = {};
+  let bolson = 0;
+  for (let i = hIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!String(r[PEDIDO_COL.nombre] ?? '').trim()) continue;
+    if (normEstado(r[PEDIDO_COL.estado]) === 'cancelado') continue;
+    if (fechaISO && anyToISO(r[PEDIDO_COL.fechaCosecha]) !== fechaISO) continue;
+    bolson += Number(r[PEDIDO_COL.bolsones]) || 0;
+    for (const it of parseDetalle(String(r[PEDIDO_COL.detalle] ?? '')))
+      verduras[it.nombre.toLowerCase()] = (verduras[it.nombre.toLowerCase()] || 0) + it.cantidad;
+    for (const e of parseDetalle(String(r[PEDIDO_COL.extras] ?? '')))
+      extras[e.nombre.toLowerCase()] = (extras[e.nombre.toLowerCase()] || 0) + e.cantidad;
+  }
+  return { verduras, extras, bolson };
 }
 
 // ── Estados de pedido: canónicos + normalización de valores viejos ──────────────
@@ -222,6 +246,6 @@ module.exports = {
   readSheet, patchRange, patchCell,
   colLetter, dateToExcel, excelToDate, anyToISO, nextRowFromRows,
   formatDetalle, parseDetalle,
-  parseStockDisponible, normEstado,
+  parseStockDisponible, pedidasPorCosecha, normEstado,
   validateUser,
 };

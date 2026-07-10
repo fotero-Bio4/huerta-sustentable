@@ -43,7 +43,7 @@ async function recargar() {
   const d = await r.json();
   if (r.ok && d.ok) aplicarData(d);
 }
-function aplicarData(d){ DATA = { pedidos:d.pedidos||[], cosecha:d.cosecha||{verduras:[],extras:[],bolsones:0}, catalogo:d.catalogo||[], config:d.config||{} };
+function aplicarData(d){ DATA = { pedidos:d.pedidos||[], cosecha:d.cosecha||{verduras:[],extras:[],bolsones:0}, catalogo:d.catalogo||[], config:d.config||{}, fechaCosecha:d.fechaCosecha||'' };
   renderPedidos(); renderDetalle(); renderCosecha(); renderConfig(); stats(); }
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
@@ -234,6 +234,7 @@ const SS_FIELDS = [['SS_SOPERA','Bandeja sopera'],['SS_ENSALADA','Bandeja de ens
 
 function renderConfig(){
   const cfg = DATA.config||{};
+  if ($('fechaCosecha')) $('fechaCosecha').value = DATA.fechaCosecha || '';
   $('cfgGrid').innerHTML = CFG_FIELDS.map(([k,l])=>`<div class="cfg-item"><label>${l}</label><input type="number" id="cfg-${k}" value="${cfg[k]??''}"></div>`).join('')
     + SS_FIELDS.map(([k,l])=>`<div class="cfg-item" style="display:flex;align-items:center;gap:.6rem;align-self:end"><button class="toggle ${cfg[k]?'off':'on'}" id="cfg-${k}" data-on="${cfg[k]?0:1}" onclick="togCfgSS('${k}')"></button><span style="font-size:.82rem">${l} (con stock)</span></div>`).join('');
 
@@ -271,6 +272,21 @@ async function guardarConfig(){
     DATA.catalogo.forEach((v,i)=>{ v.precio=precios[i].precio; v.stock=stock[i].enStock; });
     const m=$('msgCfg'); m.classList.remove('hidden'); setTimeout(()=>m.classList.add('hidden'),2500);
   } finally { btn.disabled=false; btn.innerHTML='💾 Guardar cambios'; }
+}
+
+async function guardarFechaCosecha(){
+  const fechaCosecha = $('fechaCosecha').value;
+  if (!fechaCosecha){ alert('Elegí una fecha.'); return; }
+  const btn=$('btnFecha'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Guardando…';
+  try {
+    const r = await fetch('/.netlify/functions/config',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mail:session.mail,pss:session.pss,fechaCosecha})});
+    const d = await r.json();
+    if (!r.ok || !d.ok){ alert(d.error||'No se pudo guardar.'); return; }
+    DATA.fechaCosecha = fechaCosecha;
+    const m=$('msgFecha'); m.classList.remove('hidden'); setTimeout(()=>m.classList.add('hidden'),2500);
+    await recargar();  // recalcula disponibles con la nueva cosecha
+  } finally { btn.disabled=false; btn.textContent='Guardar fecha'; }
 }
 
 // ── EXPORTAR PDV ─────────────────────────────────────────────────────────────────

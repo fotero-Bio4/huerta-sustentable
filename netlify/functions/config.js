@@ -50,6 +50,16 @@ exports.handler = async (event) => {
       }
     }
 
+    // ── Fecha de cosecha (StockDisponible!B, fila "COSECHA") ──────────────────
+    if (body.fechaCosecha) {
+      const iso = G.anyToISO(body.fechaCosecha);
+      if (!iso) return G.json(400, { error: 'Fecha de cosecha inválida.' });
+      const { values: rows, firstRow } = await G.readSheet(token, 'StockDisponible');
+      let rIdx = rows.findIndex(r => String(r[0] ?? '').trim().toLowerCase() === 'cosecha');
+      const excelRow = rIdx === -1 ? firstRow : firstRow + rIdx;
+      await G.patchRange(token, 'StockDisponible', `B${excelRow}`, [G.dateToExcel(iso)], ['dd/mm/yyyy']);
+    }
+
     // ── Precios / stock por verdura ───────────────────────────────────────────
     const wantsVerduras = Array.isArray(body.precios) || Array.isArray(body.stock);
     if (wantsVerduras) {

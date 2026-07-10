@@ -59,15 +59,15 @@ function parseBool(v, def = true) {
 }
 
 // Catálogo completo desde "Detalle por Verdura": índice por nombre + lista con
-// stock (toggle admin), cantidad cosechada (de StockDisponible), pedida y disponible.
-function catalogFull(rows, cosechada) {
+// stock (toggle admin), cantidad cosechada (de StockDisponible), pedida (de los
+// pedidos de la cosecha activa) y disponible.
+function catalogFull(rows, cosechada, pedidasV) {
   cosechada = cosechada || {};
+  pedidasV = pedidasV || {};
   let hIdx = rows.findIndex(r => r.some(c => String(c ?? '').trim().toLowerCase() === 'grupo'));
   if (hIdx === -1) hIdx = 1;
   const header = (rows[hIdx] || []).map(c => String(c ?? '').trim().toLowerCase());
   const cS = header.findIndex(h => h === 'stock');
-  let cPed = header.findIndex(h => h === 'cantidad pedida' || h.startsWith('cantidad pedida'));
-  if (cPed === -1) cPed = 4;
   const index = {};
   const lista = [];
   for (let i = hIdx + 1; i < rows.length; i++) {
@@ -77,7 +77,7 @@ function catalogFull(rows, cosechada) {
     if (!nombre || !grupo || /total/i.test(nombre)) continue;
     if (['extras', 'bolsones', 'bolsón', 'bolson'].includes(grupo.toLowerCase())) continue;
     const cos    = cosechada[nombre.toLowerCase()] || 0;
-    const pedida = num(r[cPed]);
+    const pedida = pedidasV[nombre.toLowerCase()] || 0;
     const item = { nombre, grupo, unidad: String(r[2] ?? '').trim(), precio: num(r[3]),
       stock: cS === -1 ? true : parseBool(r[cS], true),
       cosechada: cos, pedida, disponible: Math.max(0, cos - pedida) };
@@ -149,12 +149,13 @@ exports.handler = async (event) => {
     ]);
 
     const stock   = G.parseStockDisponible(stk.values || []);
+    const pedidas = G.pedidasPorCosecha(ped.values || [], stock.fecha);
     const pedidos = buildPedidos(ped.values || [], ped.firstRow);
-    const cat     = catalogFull(det.values || [], stock.cosechada);
+    const cat     = catalogFull(det.values || [], stock.cosechada, pedidas.verduras);
     const config  = buildConfig(conf.values || []);
     const cosecha = computeCosecha(pedidos, cat.index);
 
-    return G.json(200, { ok: true, nombre: user.nombre, pedidos, cosecha, catalogo: cat.lista, config });
+    return G.json(200, { ok: true, nombre: user.nombre, pedidos, cosecha, catalogo: cat.lista, config, fechaCosecha: stock.fecha });
   } catch (err) {
     console.error('[admin]', err.message);
     return G.json(500, { error: 'Error del servidor: ' + err.message });

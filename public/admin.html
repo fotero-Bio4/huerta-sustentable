@@ -196,6 +196,13 @@
 
   <!-- CONFIG -->
   <div class="panel" id="panel-config">
+    <h3 class="grupo-h" style="margin-top:0">🌱 Fecha de cosecha (habilita el formulario)</h3>
+    <p style="color:var(--texto-suave);font-size:.83rem;margin-bottom:.6rem;">Esta es la cosecha activa. El formulario toma pedidos para esta fecha y el stock disponible se calcula contra los pedidos de esta cosecha. Al cambiarla y cargar la nueva cosecha en el Excel, el stock arranca limpio.</p>
+    <div class="fecha-filtro" style="margin-bottom:1.25rem;">
+      <div><label>Fecha de cosecha</label><input type="date" id="fechaCosecha"></div>
+      <button class="btn" id="btnFecha" onclick="guardarFechaCosecha()">Guardar fecha</button>
+      <span class="msg ok hidden" id="msgFecha" style="display:inline-block">✓ Guardada</span>
+    </div>
     <h3 class="grupo-h">💳 Extras, bolsón y envío</h3>
     <div class="cfg-grid" id="cfgGrid"></div>
     <h3 class="grupo-h">🥬 Precios y stock por verdura</h3>
