@@ -37,11 +37,12 @@
   .acc-head .num{background:var(--verde-claro);color:var(--verde);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;}
   .acc-head .chev{margin-left:auto;transition:transform .2s;color:var(--verde-medio);font-size:.9rem;}
   .acc.open .acc-head .chev{transform:rotate(180deg);}
-  .acc-body{max-height:0;overflow:hidden;transition:max-height .3s ease;}
-  .acc.open .acc-body{max-height:2600px;}
+  .acc-body{max-height:0;overflow:hidden;transition:max-height .4s ease;}
+  .acc.open .acc-body{max-height:6000px;}
   .acc-inner{padding:0 1.25rem 1.25rem;font-size:.92rem;color:var(--texto);}
   .acc-inner p{margin-bottom:.7rem;} .acc-inner ul,.acc-inner ol{margin:.3rem 0 .8rem 1.25rem;} .acc-inner li{margin-bottom:.4rem;}
   .acc-inner strong{color:var(--verde-medio);}
+  .acc-inner h4{font-family:'Fraunces',serif;color:var(--verde);font-size:.98rem;margin:.9rem 0 .35rem;}
   code{background:var(--crema-oscura);padding:.1rem .4rem;border-radius:5px;font-size:.85em;font-family:ui-monospace,Menlo,Consolas,monospace;}
 
   .pill{display:inline-block;background:var(--verde);color:#fff;border-radius:8px;padding:.45rem .9rem;text-decoration:none;font-size:.85rem;font-weight:600;margin:.2rem .3rem .2rem 0;}
@@ -54,22 +55,27 @@
   .nota.danger{background:#fdecea;border-left:4px solid #c0392b;color:#7a241c;}
 
   table{width:100%;border-collapse:collapse;margin:.5rem 0 .8rem;font-size:.85rem;}
-  th,td{text-align:left;padding:.5rem .7rem;border:1px solid var(--crema-oscura);}
+  th,td{text-align:left;padding:.5rem .7rem;border:1px solid var(--crema-oscura);vertical-align:top;}
   th{background:var(--verde-claro);color:var(--verde);}
 
   .steps{counter-reset:s;list-style:none;margin-left:0!important;}
   .steps li{position:relative;padding-left:2rem;margin-bottom:.6rem;}
   .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:0;background:var(--verde-claro);color:var(--verde);width:1.4rem;height:1.4rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:600;}
 
+  .flujo{display:flex;align-items:stretch;gap:.5rem;flex-wrap:wrap;margin:.6rem 0 1rem;}
+  .flujo .box{flex:1;min-width:140px;background:var(--crema);border:1.5px solid var(--borde);border-radius:12px;padding:.7rem .8rem;font-size:.82rem;}
+  .flujo .box b{color:var(--verde);display:block;margin-bottom:.2rem;font-family:'Fraunces',serif;}
+  .flujo .arrow{align-self:center;color:var(--verde-medio);font-weight:700;}
+
   footer{text-align:center;color:var(--texto-suave);font-size:.8rem;padding:1rem;}
-  @media(max-width:540px){.accesos{grid-template-columns:1fr;}header h1{font-size:1.6rem;}}
+  @media(max-width:540px){.accesos{grid-template-columns:1fr;}header h1{font-size:1.6rem;}.flujo .arrow{display:none;}}
 </style>
 </head>
 <body>
 <header>
   <span class="hdr-emoji">🌿</span>
   <h1>Manual de uso — Admin</h1>
-  <p>Huerta Sustentable · Guía para gestionar pedidos</p>
+  <p>Huerta Sustentable · Guía para gestionar pedidos y cosechas</p>
 </header>
 
 <div class="container">
@@ -83,23 +89,27 @@
       <span class="ic">🛒</span><span class="t">Formulario</span><span class="s">Lo que ve el cliente</span>
     </a>
     <a class="acceso" href="https://bio4-my.sharepoint.com/:x:/r/personal/fotero_bio4_com_ar/_layouts/15/Doc.aspx?sourcedoc=%7BF52035CB-B1FA-4109-BEA7-5DDFCCE6130B%7D&file=huerta_base_semanal.xlsx&action=default&mobileredirect=true" target="_blank">
-      <span class="ic">📊</span><span class="t">Excel (base de datos)</span><span class="s">Pedidos, precios, usuarios</span>
+      <span class="ic">📊</span><span class="t">Excel (base de datos)</span><span class="s">Stock, precios, pedidos</span>
     </a>
   </div>
 
-  <div class="nota tip">💡 <strong>En una frase:</strong> los clientes cargan pedidos desde el <em>Formulario</em>, vos los gestionás desde el <em>Panel Admin</em>, y todo se guarda en el <em>Excel</em>. No hay nada que instalar: se usa desde el navegador (celu o compu).</div>
+  <div class="nota tip">💡 <strong>En una frase:</strong> los clientes cargan pedidos desde el <em>Formulario</em>, vos los gestionás desde el <em>Panel Admin</em>, y todo se guarda en el <em>Excel</em>. El <strong>stock de la semana</strong> lo cargás en el Excel (hoja <em>StockDisponible</em>) y define qué se puede pedir. No hay nada que instalar: se usa desde el navegador (celu o compu).</div>
 
   <!-- ÍNDICE -->
   <div class="toc">
     <h2>📑 Contenido</h2>
     <a href="#s1">1. Cómo entrar</a>
-    <a href="#s2">2. Ver y gestionar pedidos</a>
-    <a href="#s3">3. Detalle y cosecha</a>
-    <a href="#s4">4. Precios y stock</a>
-    <a href="#s5">5. Exportar al ERP (PDV)</a>
-    <a href="#s6">6. Usuarios y contraseñas</a>
-    <a href="#s7">7. Rutina semanal</a>
-    <a href="#s8">8. Problemas comunes</a>
+    <a href="#s2">2. Cómo funciona todo (Excel ↔ Admin ↔ Formulario)</a>
+    <a href="#s3">3. El formulario del cliente</a>
+    <a href="#s4">4. Cargar el stock de la semana</a>
+    <a href="#s5">5. Fecha de cosecha</a>
+    <a href="#s6">6. Ver y gestionar pedidos</a>
+    <a href="#s7">7. Detalle, cosecha e impresión</a>
+    <a href="#s8">8. Precios y stock</a>
+    <a href="#s9">9. Exportar al ERP (PDV)</a>
+    <a href="#s10">10. Usuarios y contraseñas</a>
+    <a href="#s11">11. Rutina semanal</a>
+    <a href="#s12">12. Problemas comunes</a>
   </div>
 
   <!-- 1 -->
@@ -109,125 +119,236 @@
       <p>El panel de administración está en:</p>
       <a class="pill" href="https://huerta-sustentable.netlify.app/admin.html" target="_blank">🛠️ Abrir Panel Admin</a>
       <ol class="steps">
-        <li>Abrí el link de arriba en cualquier navegador (Chrome, Edge, el del celu).</li>
+        <li>Abrí el link en cualquier navegador (Chrome, Edge, el del celu).</li>
         <li>Ingresá tu <strong>mail</strong> y <strong>contraseña</strong>.</li>
         <li>Listo: ves todos los pedidos en vivo.</li>
       </ol>
       <div class="nota tip">📌 Guardalo en favoritos o agregalo a la pantalla de inicio del celular para entrar con un toque.</div>
-      <p>La página de inicio del sitio (<code>huerta-sustentable.netlify.app</code>) lleva al <strong>formulario del cliente</strong>. El panel siempre se abre agregando <code>/admin.html</code> al final.</p>
+      <p>La página de inicio (<code>huerta-sustentable.netlify.app</code>) lleva al <strong>formulario del cliente</strong>. El panel siempre se abre agregando <code>/admin.html</code> al final.</p>
     </div></div>
   </div>
 
   <!-- 2 -->
   <div class="acc" id="s2">
-    <div class="acc-head" onclick="tog(this)"><span class="num">2</span> Ver y gestionar pedidos <span class="chev">▼</span></div>
+    <div class="acc-head" onclick="tog(this)"><span class="num">2</span> Cómo funciona todo <span class="chev">▼</span></div>
     <div class="acc-body"><div class="acc-inner">
-      <p>En la pestaña <strong>📋 Pedidos</strong> ves cada pedido con los datos del cliente, el detalle, la forma de pago y entrega.</p>
-      <ul>
-        <li><strong>Filtrar / buscar:</strong> usá los botones (Todos, Pendientes, Preparando, Entregados) o el buscador por nombre, teléfono o barrio.</li>
-        <li><strong>Cambiar estado:</strong> botón <em>“Cambiar estado”</em> → Pendiente / Preparando / Entregado / Cancelado. Queda guardado en el Excel.</li>
-        <li><strong>Precio final:</strong> botón <em>“✏️ precio”</em> para cargar el monto confirmado del pedido (lo que charlás por WhatsApp).</li>
-        <li><strong>WhatsApp:</strong> el botón 💬 abre un chat con ese cliente con un saludo listo.</li>
-        <li><strong>🔄 Actualizar:</strong> recarga los pedidos desde el Excel (útil si entró uno nuevo).</li>
-      </ul>
-      <div class="nota tip">Arriba ves los totales: cantidad de pedidos, pendientes y monto total de la semana.</div>
+      <p>Hay tres piezas conectadas. El Excel es la base de datos; el admin y el formulario son las "ventanas" que la muestran.</p>
+      <div class="flujo">
+        <div class="box"><b>📊 Excel</b>Base de datos: stock, precios, pedidos, datos bancarios, usuarios.</div>
+        <div class="arrow">⇄</div>
+        <div class="box"><b>🛠️ Admin</b>Vos: cargás fecha de cosecha, precios, gestionás pedidos, exportás al ERP.</div>
+        <div class="arrow">⇄</div>
+        <div class="box"><b>🛒 Formulario</b>El cliente: pide según el stock disponible de la cosecha activa.</div>
+      </div>
+      <h4>Qué hoja del Excel hace qué</h4>
+      <table>
+        <tr><th>Hoja del Excel</th><th>Para qué sirve</th><th>Quién la carga</th></tr>
+        <tr><td><strong>StockDisponible</strong></td><td>Cantidad cosechada de cada verdura/bolsón/extra + la <strong>fecha de cosecha</strong> (celda B1).</td><td>La huerta, a mano</td></tr>
+        <tr><td><strong>Cosechas</strong></td><td>Historial de fechas de cosecha (para filtrar por cosecha en el admin).</td><td>Se llena solo al guardar la fecha desde el admin</td></tr>
+        <tr><td><strong>Detalle por Verdura</strong></td><td>Precio de cada verdura y si está habilitada o no.</td><td>Admin o Excel</td></tr>
+        <tr><td><strong>Pedidos</strong></td><td>Todos los pedidos que entran por el formulario.</td><td>Se llena solo desde el formulario</td></tr>
+        <tr><td><strong>Config</strong></td><td>Precios generales y datos bancarios (alias, titular, CBU).</td><td>Admin o Excel</td></tr>
+        <tr><td><strong>PDV</strong> y <strong>Mapeo PDV</strong></td><td>Formato y datos fijos para exportar al ERP.</td><td>Se configuran una vez</td></tr>
+        <tr><td><strong>Usuarios</strong></td><td>Quién puede entrar al panel admin.</td><td>Admin/Excel</td></tr>
+      </table>
+      <div class="nota tip">Cada pestaña del admin es una vista de esas hojas: <em>Pedidos</em> ↔ hoja Pedidos, <em>Detalle/Cosecha</em> ↔ suma de los pedidos, <em>Precios y stock</em> ↔ hojas Detalle/Config/StockDisponible.</div>
     </div></div>
   </div>
 
   <!-- 3 -->
   <div class="acc" id="s3">
-    <div class="acc-head" onclick="tog(this)"><span class="num">3</span> Detalle por verdura y cosecha <span class="chev">▼</span></div>
+    <div class="acc-head" onclick="tog(this)"><span class="num">3</span> El formulario del cliente <span class="chev">▼</span></div>
     <div class="acc-body"><div class="acc-inner">
-      <p>Para saber <strong>cuánto cosechar</strong>, sin sumar a mano:</p>
+      <p>Es lo que ve y usa el cliente para pedir. Funciona así:</p>
       <ul>
-        <li><strong>🌱 Detalle por verdura:</strong> tabla con la cantidad total pedida de cada verdura (suma de todos los pedidos no cancelados).</li>
-        <li><strong>🧺 Cosecha:</strong> el mismo resumen agrupado por tipo, más la cantidad de bolsones y de extras (bandejas, escabeches).</li>
+        <li>Arriba muestra <strong>“Pedidos para la cosecha del [fecha]”</strong> — la fecha que fijaste en el admin.</li>
+        <li>El cliente completa sus datos, elige <strong>bolsón semanal</strong> o <strong>arma el suyo</strong> con verduras sueltas, y puede sumar <strong>extras</strong> (bandejas, escabeche).</li>
+        <li><strong>Solo aparecen los productos con stock</strong>: cada uno muestra “Quedan N” y no deja pedir más de esa cantidad. Cuando se agota o lo desactivás, <strong>desaparece</strong> del formulario.</li>
+        <li>Elige <strong>envío a domicilio</strong> (suma costo) o <strong>retiro en la huerta</strong> (con link al mapa).</li>
+        <li>La <strong>única forma de pago es Transferencia</strong>: muestra banco, titular, CBU y alias, con un <strong>botón para copiar el alias</strong>.</li>
+        <li>Al enviar, el pedido se guarda con estado <strong>“Pendiente de Aprobación”</strong> y se ofrece <strong>confirmar por WhatsApp</strong>.</li>
       </ul>
-      <div class="nota tip">Ideal mirarlo el <strong>jueves a la tarde</strong>, cuando ya cerraron los pedidos, antes de cosechar el viernes.</div>
+      <div class="nota tip">El formulario siempre lee el stock en vivo: si cargás más cosecha o habilitás un producto, aparece al recargar la página.</div>
     </div></div>
   </div>
 
   <!-- 4 -->
   <div class="acc" id="s4">
-    <div class="acc-head" onclick="tog(this)"><span class="num">4</span> Cambiar precios y stock <span class="chev">▼</span></div>
+    <div class="acc-head" onclick="tog(this)"><span class="num">4</span> Cargar el stock de la semana <span class="chev">▼</span></div>
     <div class="acc-body"><div class="acc-inner">
-      <p>En la pestaña <strong>⚙️ Precios y stock</strong> controlás lo que ve el cliente en el formulario:</p>
+      <p>El stock que puede pedir el cliente sale de la hoja <strong>StockDisponible</strong> del Excel. Ahí la huerta carga, a mano, <strong>cuánto se cosechó de cada cosa</strong>.</p>
+      <a class="pill alt" href="https://bio4-my.sharepoint.com/:x:/r/personal/fotero_bio4_com_ar/_layouts/15/Doc.aspx?sourcedoc=%7BF52035CB-B1FA-4109-BEA7-5DDFCCE6130B%7D&file=huerta_base_semanal.xlsx&action=default&mobileredirect=true" target="_blank">📊 Abrir el Excel</a>
+      <ol class="steps">
+        <li>Andá a la hoja <strong>StockDisponible</strong>.</li>
+        <li>Por cada producto, completá la columna <strong>“Cant. cosechada”</strong> con lo que hay para vender esa semana (incluye el <em>Bolsón semanal</em> y los <em>Extras</em>).</li>
+        <li>Guardá el Excel. Listo: el formulario ya toma esas cantidades.</li>
+      </ol>
+      <h4>Cómo funciona el descuento de stock</h4>
       <ul>
-        <li><strong>Precios generales:</strong> bolsón semanal, costo de envío y las bandejas/extras.</li>
-        <li><strong>“Con stock” (extras):</strong> si lo apagás, ese extra aparece como “Sin stock” y no se puede pedir.</li>
-        <li><strong>Por verdura:</strong> editás el precio y prendés/apagás el stock de cada una. Lo que esté <strong>sin stock no aparece</strong> en el formulario del cliente.</li>
+        <li><strong>Disponible = Cosechada − lo ya pedido</strong> (de esa cosecha).</li>
+        <li>A medida que entran pedidos, el disponible baja. Cuando llega a <strong>0</strong>, el producto <strong>se deshabilita solo</strong> en el formulario.</li>
+        <li>Si una verdura tiene cosechada en 0 (o vacía), directamente <strong>no aparece</strong> en el formulario.</li>
       </ul>
-      <p>Tocá <strong>💾 Guardar cambios</strong>. Se escribe en el Excel y el formulario lo toma al recargarse.</p>
-      <div class="nota tip">También podés editar precios directamente en el Excel (hoja <em>Detalle por Verdura</em>) — es la misma fuente.</div>
+      <div class="nota warn">⚠️ La “Cant. cosechada” <strong>se carga en el Excel</strong>, no en el admin. En el admin la ves (solo lectura) al lado de cada verdura como <code>cosech: X · disp: Y</code>.</div>
     </div></div>
   </div>
 
   <!-- 5 -->
   <div class="acc" id="s5">
-    <div class="acc-head" onclick="tog(this)"><span class="num">5</span> Exportar el pedido al ERP (PDV) <span class="chev">▼</span></div>
+    <div class="acc-head" onclick="tog(this)"><span class="num">5</span> Fecha de cosecha <span class="chev">▼</span></div>
     <div class="acc-body"><div class="acc-inner">
-      <p>En la pestaña <strong>📤 Exportar PDV</strong>:</p>
+      <p>Cada cosecha (cada semana) tiene una <strong>fecha</strong>. Esa fecha define para qué cosecha son los pedidos y contra qué stock se descuentan.</p>
+      <h4>Cómo guardarla</h4>
       <ol class="steps">
-        <li>Elegí <strong>fecha desde</strong> y <strong>fecha hasta</strong>.</li>
-        <li>Tocá <strong>Generar .xls</strong>. Se descarga un archivo con el formato de importación del ERP (una fila por ítem).</li>
-        <li>Importá ese <code>.xls</code> en el ERP como siempre.</li>
+        <li>En el admin, entrá a <strong>⚙️ Precios y stock</strong>.</li>
+        <li>Arriba de todo, en <strong>“Fecha de cosecha”</strong>, elegí la fecha y tocá <strong>Guardar fecha</strong>.</li>
       </ol>
-      <div class="nota warn">⚠️ <strong>Importante (una sola vez):</strong> para que cada verdura salga con su código del ERP, hay que completar la hoja <strong>“Mapeo PDV”</strong> del Excel:
-        <ul style="margin-top:.4rem">
-          <li>En la tabla de productos, poné el <strong>código (PRODUCTO)</strong> de cada verdura / extra / bolsón.</li>
-          <li>En el bloque de <strong>campos fijos</strong> completá lo que va igual en todas las filas (cliente, comprobante, vendedor, sucursal, depósitos, dimensiones…).</li>
-        </ul>
-        Mientras falte un código, el archivo lo marca como <code>[FALTA CODIGO: …]</code> y el panel te avisa cuántos quedaron sin completar.
-      </div>
+      <p>Al guardar pasan dos cosas automáticamente:</p>
+      <ul>
+        <li>Se escribe la fecha en el Excel, hoja <strong>StockDisponible</strong>, celda <strong>B1</strong>.</li>
+        <li>Se agrega a la hoja <strong>Cosechas</strong>, así queda disponible para filtrar por cosecha.</li>
+      </ul>
+      <p>El formulario pasa a mostrar <em>“Pedidos para la cosecha del [fecha]”</em> y cada pedido nuevo queda <strong>marcado con esa fecha de cosecha</strong>.</p>
+      <h4>Arrancar una cosecha nueva</h4>
+      <ol class="steps">
+        <li>Cargá las nuevas <strong>cantidades cosechadas</strong> en <em>StockDisponible</em> (reemplazando las de la semana anterior).</li>
+        <li>Cambiá la <strong>Fecha de cosecha</strong> en el admin y guardá.</li>
+      </ol>
+      <div class="nota tip">Al cambiar la fecha, el stock arranca <strong>limpio</strong>: los pedidos de cosechas anteriores no descuentan del nuevo disponible.</div>
     </div></div>
   </div>
 
   <!-- 6 -->
   <div class="acc" id="s6">
-    <div class="acc-head" onclick="tog(this)"><span class="num">6</span> Usuarios y contraseñas del admin <span class="chev">▼</span></div>
+    <div class="acc-head" onclick="tog(this)"><span class="num">6</span> Ver y gestionar pedidos <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <p>En la pestaña <strong>📋 Pedidos</strong> ves cada pedido con los datos del cliente, el detalle, la forma de pago y entrega.</p>
+      <h4>Estados de un pedido</h4>
+      <table>
+        <tr><th>Estado</th><th>Qué significa</th></tr>
+        <tr><td>⏳ <strong>Pendiente de Aprobación</strong></td><td>Recién lo cargó el cliente en el formulario.</td></tr>
+        <tr><td>✅ <strong>Confirmado</strong></td><td>Chequeaste la disponibilidad de las verduras.</td></tr>
+        <tr><td>💰 <strong>Pagado</strong></td><td>El cliente ya pagó (solo estos se exportan al ERP).</td></tr>
+        <tr><td>❌ <strong>Cancelado</strong></td><td>El pedido no va (no descuenta stock ni se exporta).</td></tr>
+      </table>
+      <h4>Acciones</h4>
+      <ul>
+        <li><strong>Cambiar estado (uno):</strong> botón <em>“Cambiar estado”</em> en cada pedido.</li>
+        <li><strong>Cambiar estado (varios a la vez):</strong> tildá los pedidos que quieras (o “Seleccionar todos”), elegí el estado en el desplegable de arriba y tocá <strong>“Aplicar a seleccionados”</strong>.</li>
+        <li><strong>Precio final:</strong> botón <em>“✏️ precio”</em> para cargar el monto confirmado (lo que charlás por WhatsApp).</li>
+        <li><strong>WhatsApp:</strong> el botón 💬 abre un chat con ese cliente con un saludo listo.</li>
+        <li><strong>🔄 Actualizar:</strong> recarga los pedidos desde el Excel.</li>
+      </ul>
+      <h4>Filtros</h4>
+      <ul>
+        <li>Botones por <strong>estado</strong> (Todos, Pendientes, Confirmados, Pagados, Cancelados) y <strong>buscador</strong> por nombre, teléfono o barrio.</li>
+        <li><strong>Por fecha</strong> (desde / hasta) y <strong>por cosecha</strong> (elegís una de las fechas guardadas) para ver solo los pedidos de esa cosecha.</li>
+      </ul>
+      <div class="nota tip">Arriba ves los totales: cantidad de pedidos, pendientes y monto total.</div>
+    </div></div>
+  </div>
+
+  <!-- 7 -->
+  <div class="acc" id="s7">
+    <div class="acc-head" onclick="tog(this)"><span class="num">7</span> Detalle, cosecha e impresión <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <p>Para saber <strong>cuánto cosechar</strong> sin sumar a mano:</p>
+      <ul>
+        <li><strong>🌱 Detalle por verdura:</strong> tabla con la cantidad total pedida de cada verdura.</li>
+        <li><strong>🧺 Cosecha:</strong> el mismo resumen agrupado por tipo, más bolsones y extras.</li>
+      </ul>
+      <h4>Filtros</h4>
+      <p>En ambas pestañas podés filtrar por <strong>fecha (desde/hasta)</strong> y por <strong>cosecha</strong>. Así ves exactamente lo que hay que cosechar para una cosecha puntual.</p>
+      <h4>Imprimir</h4>
+      <p>El botón <strong>🖨️ Imprimir</strong> abre una hoja lista para imprimir (o guardar como PDF) con lo que hay que cosechar, <strong>respetando el filtro activo</strong>. Ideal para llevar el papel a la huerta.</p>
+      <div class="nota tip">Ideal mirarlo/imprimirlo el <strong>jueves a la tarde</strong>, cuando ya cerraron los pedidos.</div>
+    </div></div>
+  </div>
+
+  <!-- 8 -->
+  <div class="acc" id="s8">
+    <div class="acc-head" onclick="tog(this)"><span class="num">8</span> Precios y stock <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <p>En la pestaña <strong>⚙️ Precios y stock</strong> controlás lo que ve el cliente:</p>
+      <ul>
+        <li><strong>Fecha de cosecha</strong> (arriba): ver punto 5.</li>
+        <li><strong>Precios generales:</strong> bolsón semanal, costo de envío y las bandejas/extras.</li>
+        <li><strong>Extras (“con stock”):</strong> si apagás el interruptor, ese extra <strong>no aparece</strong> en el formulario.</li>
+        <li><strong>Por verdura:</strong> editás el <strong>precio</strong> y prendés/apagás si está <strong>habilitada</strong>. Al lado ves <code>cosech: X · disp: Y</code> (solo lectura, viene del Excel).</li>
+      </ul>
+      <p>Tocá <strong>💾 Guardar cambios</strong>. Se escribe en el Excel y el formulario lo toma al recargarse.</p>
+      <div class="nota tip">Un producto aparece en el formulario solo si está <strong>habilitado</strong> y tiene <strong>disponible &gt; 0</strong>. Si lo apagás o se agota, desaparece.</div>
+      <div class="nota warn">⚠️ La <strong>cantidad cosechada</strong> no se edita acá: se carga en el Excel (hoja <em>StockDisponible</em>, punto 4).</div>
+    </div></div>
+  </div>
+
+  <!-- 9 -->
+  <div class="acc" id="s9">
+    <div class="acc-head" onclick="tog(this)"><span class="num">9</span> Exportar el pedido al ERP (PDV) <span class="chev">▼</span></div>
+    <div class="acc-body"><div class="acc-inner">
+      <p>En la pestaña <strong>📤 Exportar PDV</strong>:</p>
+      <ol class="steps">
+        <li>Elegí <strong>fecha desde</strong> y <strong>fecha hasta</strong>.</li>
+        <li>Tocá <strong>Generar .xls</strong>. Se descarga el archivo para importar al ERP (una fila por ítem).</li>
+        <li>Importalo en el ERP como siempre.</li>
+      </ol>
+      <div class="nota warn">💰 <strong>Solo se exportan los pedidos en estado “Pagado”</strong> dentro del rango de fechas. Los demás no salen.</div>
+      <h4>Qué lleva cada fila</h4>
+      <ul>
+        <li>El producto del ERP es siempre <strong>“BOLSON AGROECOLOGICO HUERTA”</strong>.</li>
+        <li>Los <strong>datos fijos</strong> (cliente, condición de pago, workflow, dimensiones, etc.) ya están cargados en la <strong>fila 1 de la hoja PDV</strong> del Excel y se repiten en todas las filas. <strong>No se deben modificar.</strong></li>
+        <li>La app completa lo que varía: número, fecha, <strong>DESCRIPCION</strong> = nombre y datos del cliente, <strong>DESCRIPCIONITEM</strong> = cada ítem del pedido, cantidad y precio.</li>
+      </ul>
+      <div class="nota tip">Si necesitás cambiar un valor fijo del documento (por ejemplo la dimensión), editalo en la <strong>fila 1 de la hoja PDV</strong> del Excel.</div>
+    </div></div>
+  </div>
+
+  <!-- 10 -->
+  <div class="acc" id="s10">
+    <div class="acc-head" onclick="tog(this)"><span class="num">10</span> Usuarios y contraseñas del admin <span class="chev">▼</span></div>
     <div class="acc-body"><div class="acc-inner">
       <p>Los usuarios que pueden entrar al panel se administran en la hoja <strong>“Usuarios”</strong> del Excel:</p>
       <a class="pill alt" href="https://bio4-my.sharepoint.com/:x:/r/personal/fotero_bio4_com_ar/_layouts/15/Doc.aspx?sourcedoc=%7BF52035CB-B1FA-4109-BEA7-5DDFCCE6130B%7D&file=huerta_base_semanal.xlsx&action=default&mobileredirect=true" target="_blank">📊 Abrir el Excel</a>
-      <p>La hoja tiene 3 columnas:</p>
-      <table>
-        <tr><th>Mail</th><th>Nombre</th><th>Pss</th></tr>
-        <tr><td>admin@huerta</td><td>Administrador</td><td>huerta2026</td></tr>
-        <tr><td>maria@huerta.com</td><td>María</td><td>miClave123</td></tr>
-      </table>
+      <p>La hoja tiene 3 columnas: <strong>Mail</strong>, <strong>Nombre</strong> y <strong>Pss</strong> (contraseña).</p>
       <ul>
         <li><strong>Agregar una persona:</strong> escribí una fila nueva con su mail, nombre y contraseña.</li>
         <li><strong>Cambiar una contraseña:</strong> editá la celda de la columna <em>Pss</em>.</li>
         <li><strong>Quitar acceso:</strong> borrá su fila.</li>
       </ul>
       <p>Los cambios valen <strong>al instante</strong>: el panel lee la hoja en cada inicio de sesión.</p>
-      <div class="nota danger">🔒 <strong>Seguridad:</strong> las contraseñas se guardan como texto en el Excel. Usá claves <strong>distintas</strong> de las importantes (mail, banco) y cambiá la de ejemplo <code>huerta2026</code> por una propia.</div>
+      <div class="nota danger">🔒 <strong>Seguridad:</strong> las contraseñas se guardan como texto en el Excel. Usá claves <strong>distintas</strong> de las importantes (mail, banco).</div>
     </div></div>
   </div>
 
-  <!-- 7 -->
-  <div class="acc" id="s7">
-    <div class="acc-head" onclick="tog(this)"><span class="num">7</span> Rutina de la semana <span class="chev">▼</span></div>
+  <!-- 11 -->
+  <div class="acc" id="s11">
+    <div class="acc-head" onclick="tog(this)"><span class="num">11</span> Rutina de la semana <span class="chev">▼</span></div>
     <div class="acc-body"><div class="acc-inner">
       <table>
         <tr><th>Cuándo</th><th>Qué hacés</th></tr>
-        <tr><td>Lun–Jue</td><td>Los pedidos entran solos por el formulario. Los revisás en el panel y vas confirmando precio por WhatsApp.</td></tr>
-        <tr><td>Jueves tarde</td><td>Cerrás pedidos. Mirás <strong>Detalle / Cosecha</strong> para saber cuánto cosechar.</td></tr>
-        <tr><td>Viernes</td><td>Cosechás y entregás. Vas marcando estados (Preparando → Entregado).</td></tr>
-        <tr><td>Cuando toque</td><td>Generás el <strong>PDV</strong> por rango de fechas para importar al ERP.</td></tr>
+        <tr><td>Inicio de cosecha</td><td>Cargás la <strong>cantidad cosechada</strong> en <em>StockDisponible</em> y guardás la <strong>fecha de cosecha</strong> en el admin.</td></tr>
+        <tr><td>Lun–Jue</td><td>Los pedidos entran solos por el formulario. Los revisás, chequeás disponibilidad y vas pasando a <strong>Confirmado</strong>. Confirmás precio por WhatsApp.</td></tr>
+        <tr><td>Al recibir el pago</td><td>Pasás el pedido a <strong>Pagado</strong> (uno por uno o en masa).</td></tr>
+        <tr><td>Jueves tarde</td><td>Cerrás pedidos. Mirás/imprimís <strong>Detalle / Cosecha</strong> (filtrando por la cosecha) para saber cuánto cosechar.</td></tr>
+        <tr><td>Viernes</td><td>Cosechás y entregás.</td></tr>
+        <tr><td>Cuando toque</td><td>Generás el <strong>PDV</strong> por rango de fechas (solo Pagados) para importar al ERP.</td></tr>
       </table>
     </div></div>
   </div>
 
-  <!-- 8 -->
-  <div class="acc" id="s8">
-    <div class="acc-head" onclick="tog(this)"><span class="num">8</span> Problemas comunes <span class="chev">▼</span></div>
+  <!-- 12 -->
+  <div class="acc" id="s12">
+    <div class="acc-head" onclick="tog(this)"><span class="num">12</span> Problemas comunes <span class="chev">▼</span></div>
     <div class="acc-body"><div class="acc-inner">
       <ul>
-        <li><strong>“Mail o contraseña incorrectos”:</strong> revisá que el mail y la clave coincidan exactamente con la hoja <em>Usuarios</em> (sin espacios de más).</li>
-        <li><strong>El formulario no muestra una verdura:</strong> probablemente está <em>sin stock</em>. Activala en <em>Precios y stock</em>.</li>
-        <li><strong>No aparece un pedido nuevo:</strong> tocá <strong>🔄 Actualizar</strong> en el panel.</li>
-        <li><strong>El PDV dice “FALTA CODIGO”:</strong> completá el código de ese producto en la hoja <em>Mapeo PDV</em> (ver punto 5).</li>
-        <li><strong>“Servidor no configurado” / errores al cargar:</strong> es un tema de configuración del sitio (variables de entorno). Avisá a quien lo administra.</li>
+        <li><strong>“Mail o contraseña incorrectos”:</strong> revisá que coincidan exactamente con la hoja <em>Usuarios</em> (sin espacios de más).</li>
+        <li><strong>El formulario no muestra una verdura:</strong> o no tiene <em>cosechada</em> cargada, o llegó a su límite, o está deshabilitada en <em>Precios y stock</em>.</li>
+        <li><strong>El formulario muestra la fecha de cosecha equivocada:</strong> guardá la fecha correcta en <em>Precios y stock</em> (punto 5).</li>
+        <li><strong>El stock no arranca de cero en una cosecha nueva:</strong> asegurate de haber <em>cambiado la fecha de cosecha</em> y cargado las nuevas cantidades en <em>StockDisponible</em>.</li>
+        <li><strong>No aparece un pedido nuevo:</strong> tocá <strong>🔄 Actualizar</strong>.</li>
+        <li><strong>El PDV no exporta un pedido:</strong> revisá que esté en estado <strong>Pagado</strong> y dentro del rango de fechas.</li>
+        <li><strong>No se abre la impresión:</strong> permití las ventanas emergentes en el navegador.</li>
+        <li><strong>“Servidor no configurado” / errores al cargar:</strong> es un tema de configuración del sitio. Avisá a quien lo administra.</li>
       </ul>
     </div></div>
   </div>
