@@ -52,13 +52,12 @@ function parseBool(v, def = true) {
   return def;
 }
 
-// Devuelve { grupos, bolson }. Combina "Detalle por Verdura" (precio, cantidad
-// pedida, toggle de stock del admin) con la cosecha manual de "StockDisponible".
-// Cada producto lleva: cosechada, pedida, disponible = max(0, cosechada-pedida)
-// y sinStock = (admin lo desactivó) || (disponible <= 0). No se oculta ninguno:
-// el formulario los muestra atenuados.
-function buildCatalogo(rows, cosechada) {
-  // Buscar la fila de encabezado (la que contiene "Grupo").
+// Catálogo de verduras para el formulario. Precio/nombre/unidad y el toggle de
+// stock del admin salen de "Detalle por Verdura"; la cantidad cosechada de
+// "StockDisponible" y lo ya pedido (pedidasV) de los pedidos de esa cosecha.
+// SOLO se incluyen productos disponibles: se OCULTAN los desactivados por el
+// admin y los que llegaron al límite (disponible <= 0). Grupos vacíos se omiten.
+function buildCatalogo(rows, cosechada, pedidasV) {
   let hIdx = rows.findIndex(r => r.some(c => String(c ?? '').trim().toLowerCase() === 'grupo'));
   if (hIdx === -1) hIdx = 1; // fallback: segunda fila
   const header = rows[hIdx] || [];
@@ -66,12 +65,10 @@ function buildCatalogo(rows, cosechada) {
   const cG = findCol(header, 'grupo');
   const cU = findCol(header, 'unidad');
   const cP = findCol(header, 'precio unit. ($)', 'precio unit', 'precio');
-  const cPed = findCol(header, 'cantidad pedida');
   const cS = findCol(header, 'stock');
 
   const grupos = [];
   const idx = {};
-  let bolson = { cosechada: cosechada['__bolson__'] || 0, pedida: 0, disponible: 0 };
   for (let i = hIdx + 1; i < rows.length; i++) {
     const r = rows[i];
     const nombre = String(r[cN] ?? '').trim();
@@ -79,20 +76,14 @@ function buildCatalogo(rows, cosechada) {
     if (!nombre || !grupo) continue;
     if (/total/i.test(nombre)) continue;
     const nl = nombre.toLowerCase();
-    const pedida = cPed === -1 ? 0 : (Number(r[cPed]) || 0);
-
-    // El bolsón se maneja aparte (grupo "Bolsones").
-    if (nl === 'bolsón semanal' || nl === 'bolson semanal') {
-      bolson.pedida = pedida;
-      bolson.disponible = Math.max(0, bolson.cosechada - pedida);
-      continue;
-    }
-    // Extras y otros grupos manejados aparte quedan fuera del catálogo de verduras.
+    if (nl === 'bolsón semanal' || nl === 'bolson semanal') continue;           // bolsón aparte
     if (['extras', 'bolsones', 'bolsón', 'bolson'].includes(grupo.toLowerCase())) continue;
 
-    const enStock  = cS === -1 ? true : parseBool(r[cS], true);
-    const cos      = cosechada[nl] || 0;
-    const disp     = Math.max(0, cos - pedida);
+    const enStock = cS === -1 ? true : parseBool(r[cS], true);
+    const cos     = cosechada[nl] || 0;
+    const pedida  = pedidasV[nl] || 0;
+    const disp    = Math.max(0, cos - pedida);
+    if (!enStock || disp <= 0) continue;                                        // OCULTAR sin stock
     if (!(grupo in idx)) { idx[grupo] = grupos.length; grupos.push({ grupo, items: [] }); }
     grupos[idx[grupo]].items.push({
       nombre,
@@ -101,11 +92,13 @@ function buildCatalogo(rows, cosechada) {
       cosechada: cos,
       pedida,
       disponible: disp,
-      sinStock: !enStock || disp <= 0,
     });
   }
-  return { grupos, bolson };
+  return grupos;
 }
+
+// Nombres (en minúscula) de los extras que maneja el formulario.
+const EXTRA_NAMES = ['bandeja sopera', 'bandeja de ensalada', 'escabeche de berenjenas'];
 
 function buildConfig(rows) {
   const cfg = { ...CONFIG_DEFAULTS };
@@ -135,18 +128,26 @@ exports.handler = async (event) => {
 
   try {
     const token = await G.getToken();
-    const [det, conf, stk] = await Promise.all([
+    const [det, conf, stk, ped] = await Promise.all([
       G.readSheet(token, 'Detalle por Verdura'),
       G.readSheet(token, 'Config'),
       G.readSheet(token, 'StockDisponible'),
+      G.readSheet(token, 'Pedidos'),
     ]);
 
-    const stock = G.parseStockDisponible(stk.values || []);
-    const cosechada = { ...stock.cosechada, __bolson__: stock.bolson };
-    const { grupos, bolson } = buildCatalogo(det.values || [], cosechada);
+    const stock   = G.parseStockDisponible(stk.values || []);
+    const pedidas = G.pedidasPorCosecha(ped.values || [], stock.fecha);
+    const grupos  = buildCatalogo(det.values || [], stock.cosechada, pedidas.verduras);
+    const bolson  = { cosechada: stock.bolson, pedida: pedidas.bolson,
+                      disponible: Math.max(0, stock.bolson - pedidas.bolson) };
+    const extras  = {};
+    for (const n of EXTRA_NAMES) {
+      const c = stock.cosechada[n] || 0, p = pedidas.extras[n] || 0;
+      extras[n] = { cosechada: c, pedida: p, disponible: Math.max(0, c - p) };
+    }
     const config = buildConfig(conf.values || []);
 
-    return G.json(200, { ok: true, catalogo: grupos, bolson, config });
+    return G.json(200, { ok: true, catalogo: grupos, bolson, extras, fecha: stock.fecha, config });
   } catch (err) {
     console.error('[catalogo]', err.message);
     return G.json(500, { error: 'Error del servidor: ' + err.message });

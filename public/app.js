@@ -19,6 +19,8 @@ const TIPOS_ENSALADA = [
 ];
 
 let CONFIG = {}, CATALOG = [], BOLSON = { cosechada:0, pedida:0, disponible:0 };
+let EXTRAS_STOCK = {};   // nombre en minúscula → { cosechada, pedida, disponible }
+let FECHA_COSECHA = '';  // fecha de cosecha activa (ISO)
 let cantVerd = [];                 // cantVerd[gi][ii]
 let cantBolson = 0;
 let extQty = { sopera:0, ensalada:0, escabeche:0 };
@@ -36,6 +38,8 @@ async function cargarCatalogo() {
     CONFIG = d.config || {};
     CATALOG = d.catalogo || [];
     BOLSON = d.bolson || { cosechada:0, pedida:0, disponible:0 };
+    EXTRAS_STOCK = d.extras || {};
+    FECHA_COSECHA = d.fecha || '';
     cantVerd = CATALOG.map(g => g.items.map(() => 0));
     renderTodo();
     $('loaderCatalogo').style.display = 'none';
@@ -95,9 +99,20 @@ function renderTodo() {
   renderExtras();
   renderEnsaladaRows();
   renderBolsonStock();
+  renderCosechaBanner();
   // Único medio de pago: Transferencia. Se deja preseleccionada.
   const pc = document.querySelector('.pago-card');
   if (pc) selPago(pc, 'Transferencia');
+}
+
+// Banner con la fecha de la cosecha activa (viene de StockDisponible!B1).
+function renderCosechaBanner() {
+  const b = $('cosechaBanner');
+  if (!b) return;
+  if (!FECHA_COSECHA) { b.style.display = 'none'; return; }
+  const [y, m, d] = FECHA_COSECHA.split('-');
+  b.textContent = `🌱 Pedidos para la cosecha del ${d}/${m}/${y}`;
+  b.style.display = 'block';
 }
 
 // Estado de stock del bolsón: si no hay disponible, deshabilita el control.
@@ -120,13 +135,9 @@ function renderBolsonStock() {
 function renderGrupos() {
   $('gruposContainer').innerHTML = CATALOG.map((g, gi) => `
     <div class="grupo-titulo">${GRUPO_EMOJI[g.grupo]||'🥗'} ${g.grupo}</div>
-    ${g.items.map((p, ii) => {
-      const hint = p.sinStock
-        ? '<span class="stock-badge">Sin stock</span>'
-        : `<span class="stock-hint">Quedan ${p.disponible}</span>`;
-      return `
-      <div class="producto-row${p.sinStock?' agotado':''}">
-        <span class="producto-nombre">${p.nombre} <span style="color:#aaa;font-size:.78rem;">(${p.unidad})</span> ${hint}</span>
+    ${g.items.map((p, ii) => `
+      <div class="producto-row">
+        <span class="producto-nombre">${p.nombre} <span style="color:#aaa;font-size:.78rem;">(${p.unidad})</span> <span class="stock-hint">Quedan ${p.disponible}</span></span>
         <span class="precio-ref">${fmt(p.precio)}</span>
         <div class="qty-control">
           <button class="qty-btn" onclick="chVerd(${gi},${ii},-1)">−</button>
@@ -134,23 +145,32 @@ function renderGrupos() {
           <button class="qty-btn" onclick="chVerd(${gi},${ii},1)">+</button>
         </div>
         <span class="prod-sub" id="v-s-${gi}-${ii}"></span>
-      </div>`;
-    }).join('')}
+      </div>`).join('')}
   `).join('') || '<p style="color:var(--texto-suave);font-size:.88rem">No hay productos disponibles en este momento.</p>';
 }
 
+// Disponible de un extra (nombre → cantidad). Combina el toggle del admin con
+// el stock cosechado. Devuelve -1 si el admin lo desactivó (SS = true).
+function extraDisponible(def) {
+  if (CONFIG[def.cfgSS]) return 0;                 // desactivado por el admin
+  const s = EXTRAS_STOCK[def.nombre.toLowerCase()];
+  return s ? s.disponible : 0;
+}
 function renderExtras() {
-  $('extrasContainer').innerHTML = EXTRAS_DEF.map(e => {
-    const sinStock = !!CONFIG[e.cfgSS];
+  // Solo se muestran los extras habilitados y con stock (los demás se ocultan).
+  const visibles = EXTRAS_DEF.filter(e => extraDisponible(e) > 0);
+  if (!visibles.length) { $('extrasContainer').innerHTML = '<p style="color:var(--texto-suave);font-size:.85rem">No hay extras disponibles para esta cosecha.</p>'; return; }
+  $('extrasContainer').innerHTML = visibles.map(e => {
     const precio = CONFIG[e.cfgPrecio] || 0;
+    const disp = extraDisponible(e);
     return `
-      <div class="extra-card" style="${sinStock?'opacity:.55':''}">
+      <div class="extra-card">
         <div class="extra-header">
           <div class="extra-info">
-            <div class="extra-nombre">${e.nombre} ${sinStock?'<span class="stock-badge">Sin stock</span>':''}</div>
-            <div class="extra-desc">${sinStock?'Sin stock por el momento':e.desc+' — '+fmt(precio)+' c/u'}</div>
+            <div class="extra-nombre">${e.nombre} <span class="stock-hint">Quedan ${disp}</span></div>
+            <div class="extra-desc">${e.desc} — ${fmt(precio)} c/u</div>
           </div>
-          <div class="qty-control" style="${sinStock?'pointer-events:none;opacity:.4':''}">
+          <div class="qty-control">
             <button class="qty-btn" onclick="chExtra('${e.key}',-1)">−</button>
             <span class="qty-num" id="${e.key}-qty">0</span>
             <button class="qty-btn" onclick="chExtra('${e.key}',1)">+</button>
@@ -190,7 +210,6 @@ function chBolson(d){
 }
 function chVerd(gi,ii,d){
   const p = CATALOG[gi].items[ii];
-  if (p.sinStock) return;
   cantVerd[gi][ii] = Math.min(p.disponible, Math.max(0, cantVerd[gi][ii]+d));
   $(`v-q-${gi}-${ii}`).textContent = cantVerd[gi][ii];
   const sub = cantVerd[gi][ii]*p.precio;
@@ -199,8 +218,9 @@ function chVerd(gi,ii,d){
 }
 function chExtra(key,d){
   const def = EXTRAS_DEF.find(e=>e.key===key);
-  if (CONFIG[def.cfgSS]) return;
-  extQty[key] = Math.max(0, extQty[key]+d);
+  const disp = extraDisponible(def);
+  if (disp <= 0) return;
+  extQty[key] = Math.min(disp, Math.max(0, extQty[key]+d));
   $(`${key}-qty`).textContent = extQty[key];
   const sub = extQty[key]*(CONFIG[def.cfgPrecio]||0);
   $(`${key}-sub`).textContent = extQty[key]>0?fmt(sub):'';
@@ -225,7 +245,7 @@ function getItems() {
   return items;
 }
 function getExtras() {
-  return EXTRAS_DEF.filter(e=>extQty[e.key]>0 && !CONFIG[e.cfgSS])
+  return EXTRAS_DEF.filter(e=>extQty[e.key]>0 && extraDisponible(e)>0)
     .map(e=>({nombre:e.nombre,cantidad:extQty[e.key],precio:CONFIG[e.cfgPrecio]||0}));
 }
 

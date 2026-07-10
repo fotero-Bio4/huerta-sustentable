@@ -2,31 +2,12 @@
 
 // POST público (rate-limited): agrega un pedido nuevo a la hoja "Pedidos".
 // Escribe columnas A–O (la P = Total tiene fórmula y se deja intacta) y las
-// columnas de estado de la app Q=Estado, R=FechaPedido, S=IDPedido.
+// columnas de estado de la app Q=Estado, R=FechaPedido, S=IDPedido, T=FechaCosecha.
 
 const G = require('./_graph');
 
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
 function clean(v) { return String(v ?? '').trim().slice(0, 500); }
-
-// Mapa nombre→cantidad pedida (col E "Cantidad pedida") desde Detalle por Verdura.
-function pedidaIndex(rows) {
-  let hIdx = rows.findIndex(r => r.some(c => String(c ?? '').trim().toLowerCase() === 'grupo'));
-  if (hIdx === -1) hIdx = 1;
-  const header = (rows[hIdx] || []).map(c => String(c ?? '').trim().toLowerCase());
-  let cPed = header.findIndex(h => h === 'cantidad pedida' || h.startsWith('cantidad pedida'));
-  if (cPed === -1) cPed = 4;
-  const map = {};
-  let bolson = 0;
-  for (let i = hIdx + 1; i < rows.length; i++) {
-    const nombre = String(rows[i][0] ?? '').trim().toLowerCase();
-    if (!nombre || /total/i.test(nombre)) continue;
-    const ped = num(rows[i][cPed]);
-    if (nombre === 'bolsón semanal' || nombre === 'bolson semanal') bolson = ped;
-    else map[nombre] = ped;
-  }
-  return { map, bolson };
-}
 
 // Arma el texto de extras: "Bandeja sopera x1 | Escabeche de berenjenas x2"
 function formatExtras(extras) {
@@ -68,31 +49,28 @@ exports.handler = async (event) => {
   try {
     const token = await G.getToken();
 
-    // Leer pedidos (para la próxima fila) + stock cosechado y cantidades ya
-    // pedidas (para validar que no se pase del disponible).
-    const [ped, stk, det] = await Promise.all([
+    // Leer pedidos (para la próxima fila + lo ya pedido) y el stock cosechado.
+    const [ped, stk] = await Promise.all([
       G.readSheet(token, 'Pedidos'),
       G.readSheet(token, 'StockDisponible'),
-      G.readSheet(token, 'Detalle por Verdura'),
     ]);
     const { values: rows, firstRow } = ped;
     const nextRow = G.nextRowFromRows(rows, firstRow, 0);
 
-    // ── Validación de stock (verduras + bolsón) ──────────────────────────────
-    const stock = G.parseStockDisponible(stk.values || []);
-    const { map: pedidaMap, bolson: bolsonPedida } = pedidaIndex(det.values || []);
-    const dispDe = (nombre) => {
+    // ── Validación de stock (verduras + extras + bolsón) para esta cosecha ────
+    const stock   = G.parseStockDisponible(stk.values || []);
+    const fechaCosecha = stock.fecha;
+    const pedidas = G.pedidasPorCosecha(rows, fechaCosecha);
+    const dispDe = (nombre, pedidasMap) => {
       const nl = String(nombre).trim().toLowerCase();
-      return Math.max(0, (stock.cosechada[nl] || 0) - (pedidaMap[nl] || 0));
+      return Math.max(0, (stock.cosechada[nl] || 0) - (pedidasMap[nl] || 0));
     };
     const faltantes = [];
-    for (const it of items) {
-      if (num(it.cantidad) > dispDe(it.nombre)) faltantes.push(it.nombre);
-    }
-    const bolsonDisp = Math.max(0, stock.bolson - bolsonPedida);
-    if (bolsones > bolsonDisp) faltantes.push('Bolsón semanal');
+    for (const it of items)  if (num(it.cantidad) > dispDe(it.nombre, pedidas.verduras)) faltantes.push(it.nombre);
+    for (const e  of extras) if (num(e.cantidad)  > dispDe(e.nombre,  pedidas.extras))   faltantes.push(e.nombre);
+    if (bolsones > Math.max(0, stock.bolson - pedidas.bolson)) faltantes.push('Bolsón semanal');
     if (faltantes.length) {
-      return G.json(409, { error: 'Nos quedamos sin stock suficiente de: ' + faltantes.join(', ') +
+      return G.json(409, { error: 'Nos quedamos sin stock suficiente de: ' + [...new Set(faltantes)].join(', ') +
         '. Actualizá la página para ver la disponibilidad y ajustá tu pedido.' });
     }
 
@@ -122,9 +100,10 @@ exports.handler = async (event) => {
 
     await G.patchRange(token, 'Pedidos', `A${nextRow}:O${nextRow}`, rowAO, fmtAO);
 
-    // Q..S (estado de la app). Se deja P intacta entre medio.
-    const rowQS = ['pendiente', G.dateToExcel(fechaISO), id];
-    await G.patchRange(token, 'Pedidos', `Q${nextRow}:S${nextRow}`, rowQS, ['General','dd/mm/yyyy','General']);
+    // Q..T (estado de la app). Se deja P intacta entre medio.
+    // T = FechaCosecha: taggea el pedido a la cosecha activa para gestionar stock.
+    const rowQT = ['pendiente', G.dateToExcel(fechaISO), id, fechaCosecha ? G.dateToExcel(fechaCosecha) : ''];
+    await G.patchRange(token, 'Pedidos', `Q${nextRow}:T${nextRow}`, rowQT, ['General','dd/mm/yyyy','General','dd/mm/yyyy']);
 
     return G.json(200, { ok: true, id });
   } catch (err) {
