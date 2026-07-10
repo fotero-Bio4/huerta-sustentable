@@ -1,9 +1,15 @@
 'use strict';
 
 // POST con login: genera el archivo PDV (.xls) para importar al ERP, con los
-// pedidos cuyo FechaPedido cae entre {desde, hasta} (inclusive) y estado = pagado.
-// Cada ítem (bolsón / verdura / extra) es una fila. El mapeo de códigos y los
-// valores fijos de cabecera se leen de la hoja "Mapeo PDV".
+// pedidos PAGADOS cuyo FechaPedido cae entre {desde, hasta} (inclusive).
+// Cada ítem (bolsón / verdura / extra) es una fila.
+//
+// La fila 1 de la hoja "PDV" es la PLANTILLA con los valores fijos del documento
+// (CLIENTE, CONDICIONPAGO, PRODUCTO = "BOLSON AGROECOLOGICO HUERTA", WORKFLOW,
+// DIMENSION, etc.). Esos valores se repiten en TODAS las filas sin modificarse.
+// Solo se completan por pedido/ítem: NUMERO, FECHA, DESCRIPCION (cliente + datos),
+// DESCRIPCIONITEM (cada ítem), CANTIDAD y PRECIO. La hoja "Mapeo PDV" aporta, como
+// respaldo, valores fijos que no estén en la plantilla y el NUMERO_INICIAL.
 
 const G = require('./_graph');
 const XLSX = require('xlsx');
@@ -25,7 +31,11 @@ function buildPedidos(rows, firstRow) {
     if (!nombre) continue;
     out.push({
       nombre,
+      tel:      String(r[COL.tel] ?? '').trim(),
+      email:    String(r[COL.email] ?? '').trim(),
       barrio:   String(r[COL.barrio] ?? '').trim(),
+      dir:      String(r[COL.dir] ?? '').trim(),
+      entrega:  String(r[COL.entrega] ?? '').trim(),
       bolsones: num(r[COL.bolsones]),
       precioBolson: num(r[COL.precioBolson]),
       detalle:  String(r[COL.detalle] ?? '').trim(),
@@ -50,29 +60,20 @@ function priceIndex(rows) {
   return map;
 }
 
-// Parsea la hoja "Mapeo PDV": tabla de productos + valores fijos de cabecera.
-function parseMapeo(rows) {
-  const productMap = {}; // nombre.toLowerCase() → { producto, descitem, tipoitem }
-  const fixed = {};      // CAMPO (mayúsc) → valor
+// Valores fijos de respaldo desde "Mapeo PDV" (sección clave/valor).
+function parseMapeoFixed(rows) {
+  const fixed = {};
   let mode = 'fixed';
-  for (const r of rows) {
+  for (const r of (rows || [])) {
     const a = String(r[0] ?? '').trim();
     const al = a.toLowerCase();
     if (!a) continue;
     if (al.startsWith('nombre app') || al === 'productos') { mode = 'prod'; continue; }
     if (al.startsWith('campo') || al === 'cabecera' || al.startsWith('valores fijos')) { mode = 'fixed'; continue; }
-    if (al.startsWith('🗺') || al.startsWith('mapeo')) continue; // título
-    if (mode === 'prod') {
-      productMap[al] = {
-        producto: String(r[1] ?? '').trim(),
-        descitem: String(r[2] ?? '').trim() || a,
-        tipoitem: String(r[3] ?? '').trim(),
-      };
-    } else {
-      fixed[a.toUpperCase()] = r[1] ?? '';
-    }
+    if (al.startsWith('🗺') || al.startsWith('mapeo')) continue;
+    if (mode === 'fixed') fixed[a.toUpperCase()] = r[1] ?? '';
   }
-  return { productMap, fixed };
+  return fixed;
 }
 
 function fechaLegible(iso) {
@@ -107,33 +108,38 @@ exports.handler = async (event) => {
       G.readSheet(token, 'Config'),
     ]);
 
+    // Encabezado y plantilla de valores fijos (fila 1 de PDV).
+    const header = (pdv.values && pdv.values[0]) ? pdv.values[0].map(h => String(h ?? '').trim()) : [];
+    if (!header.length) return G.json(500, { error: 'La hoja PDV no tiene encabezados.' });
+    const tmpl = (pdv.values && pdv.values[1]) ? pdv.values[1] : [];
+    const fixed = { ...parseMapeoFixed(map.values || []) };   // respaldo
+    header.forEach((h, i) => {                                // la plantilla PDV manda
+      const v = tmpl[i];
+      if (v !== '' && v !== null && v !== undefined) fixed[h.toUpperCase()] = v;
+    });
+
     // Precios de extras desde Config (misma fuente que el formulario).
     const cfg = {};
     for (const r of (conf.values || [])) { const k = String(r[0] ?? '').trim(); if (k && !/clave/i.test(k)) cfg[k] = num(r[1]); }
     const EXTRA_KEY = { 'bandeja sopera':'PRECIO_SOPERA', 'bandeja de ensalada':'PRECIO_ENSALADA', 'escabeche de berenjenas':'PRECIO_ESCABECHE' };
-    const precioExtra = (nombre) => cfg[EXTRA_KEY[nombre.toLowerCase()]] || precios[nombre.toLowerCase()] || num(fixed['PRECIO_' + nombre.toUpperCase()]) || 0;
-
-    const header = (pdv.values && pdv.values[0]) ? pdv.values[0].map(h => String(h ?? '').trim()) : [];
-    if (!header.length) return G.json(500, { error: 'La hoja PDV no tiene encabezados.' });
+    const precios = priceIndex(det.values || []);
+    const precioExtra = (nombre) => cfg[EXTRA_KEY[nombre.toLowerCase()]] || precios[nombre.toLowerCase()] || 0;
 
     const pedidos = buildPedidos(ped.values || [], ped.firstRow)
       .filter(p => p.estado === 'pagado' && p.fechaISO && p.fechaISO >= desde && p.fechaISO <= hasta);
-
     if (!pedidos.length) return G.json(404, { error: 'No hay pedidos pagados en ese rango de fechas.' });
 
-    const precios = priceIndex(det.values || []);
-    const { productMap, fixed } = parseMapeo(map.values || []);
+    // Descripción de cabecera: nombre del cliente + sus datos.
+    const descripcionCliente = (p) => {
+      const entrega = p.entrega === 'Retiro'
+        ? 'Retiro en huerta'
+        : [p.dir, p.barrio].filter(Boolean).join(', ');
+      return [p.nombre, p.tel ? 'Tel: ' + p.tel : '', p.email, entrega].filter(Boolean).join(' | ');
+    };
 
-    const prod = (nombre) => productMap[String(nombre).toLowerCase()] || null;
-    const codigo = (nombre) => { const p = prod(nombre); return p && p.producto ? p.producto : `[FALTA CODIGO: ${nombre}]`; };
-    const descItem = (nombre) => { const p = prod(nombre); return p && p.descitem ? p.descitem : nombre; };
-    const tipoItem = (nombre) => { const p = prod(nombre); return (p && p.tipoitem) || fixed.TIPOITEM || ''; };
-
-    // Expandir pedidos → ítems
-    const numInicial = num(fixed.NUMERO_INICIAL) || 1;
+    const numInicial = num(fixed.NUMERO_INICIAL) || num(tmpl[header.findIndex(h => h.toUpperCase() === 'NUMERO')]) || 1;
     const dataRows = [];
     let numero = numInicial;
-    let warnings = 0;
 
     for (const p of pedidos) {
       const items = [];
@@ -142,27 +148,20 @@ exports.handler = async (event) => {
       for (const e of G.parseDetalle(p.extras))  items.push({ nombre: e.nombre, cantidad: e.cantidad, precio: precioExtra(e.nombre) });
       if (!items.length) continue;
 
-      const condPago = fixed['CONDICIONPAGO_' + String(p.pago).toUpperCase()] || fixed.CONDICIONPAGO || p.pago;
-
+      const descCliente = descripcionCliente(p);
       for (const it of items) {
-        if (codigo(it.nombre).startsWith('[FALTA')) warnings++;
         const computed = {
-          NUMERO:         numero,
-          FECHA:          fechaLegible(p.fechaISO),
-          CLIENTE:        fixed.CLIENTE || p.nombre,
-          CONDICIONPAGO:  condPago,
-          PRODUCTO:       codigo(it.nombre),
-          DESCRIPCIONITEM:descItem(it.nombre),
-          CANTIDAD:       it.cantidad,
-          PRECIO:         it.precio,
-          TIPOITEM:       tipoItem(it.nombre),
-          FECHAENTREGA:   fixed.FECHAENTREGA || fechaLegible(p.fechaISO),
+          NUMERO:          numero,
+          FECHA:           fechaLegible(p.fechaISO),
+          DESCRIPCION:     descCliente,
+          DESCRIPCIONITEM: it.nombre,
+          CANTIDAD:        it.cantidad,
+          PRECIO:          it.precio,
         };
         const row = header.map(h => {
           const key = h.toUpperCase();
-          if (key in computed && computed[key] !== '' && computed[key] !== undefined) return computed[key];
+          if (key in computed && computed[key] !== '' && computed[key] !== undefined && computed[key] !== null) return computed[key];
           if (key in fixed) return fixed[key];
-          if (key in computed) return computed[key];
           return '';
         });
         dataRows.push(row);
@@ -178,14 +177,7 @@ exports.handler = async (event) => {
     const base64 = XLSX.write(wb, { type: 'base64', bookType: 'biff8' });
 
     const filename = `PDV_huerta_${desde}_a_${hasta}.xls`;
-    return G.json(200, {
-      ok: true,
-      filename,
-      base64,
-      pedidos: pedidos.length,
-      filas: dataRows.length,
-      warnings,
-    });
+    return G.json(200, { ok: true, filename, base64, pedidos: pedidos.length, filas: dataRows.length, warnings: 0 });
   } catch (err) {
     console.error('[export-pdv]', err.message);
     return G.json(500, { error: 'Error al generar el PDV: ' + err.message });

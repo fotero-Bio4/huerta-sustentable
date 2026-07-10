@@ -216,6 +216,16 @@ function pedidasPorCosecha(rows, fechaISO) {
   return { verduras, extras, bolson };
 }
 
+// ── Cosechas (hoja "Cosechas": encabezado en fila 1, fechas en col A desde fila 2) ─
+function parseCosechas(rows) {
+  const out = [];
+  for (let i = 1; i < (rows || []).length; i++) {
+    const iso = anyToISO(rows[i][0]);
+    if (iso && !out.includes(iso)) out.push(iso);
+  }
+  return out.sort().reverse();  // más reciente primero
+}
+
 // ── Estados de pedido: canónicos + normalización de valores viejos ──────────────
 // Canónicos: pendiente | confirmado | pagado | cancelado
 function normEstado(v) {
@@ -246,6 +256,6 @@ module.exports = {
   readSheet, patchRange, patchCell,
   colLetter, dateToExcel, excelToDate, anyToISO, nextRowFromRows,
   formatDetalle, parseDetalle,
-  parseStockDisponible, pedidasPorCosecha, normEstado,
+  parseStockDisponible, pedidasPorCosecha, parseCosechas, normEstado,
   validateUser,
 };

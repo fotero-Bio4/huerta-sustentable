@@ -11,7 +11,7 @@ const COL = {
   nombre: 0, tel: 1, email: 2, barrio: 3, dir: 4, entrega: 5,
   bolsones: 6, precioBolson: 7, detalle: 8, cantItems: 9, totalVerd: 10,
   notas: 11, extras: 12, totalExtras: 13, pago: 14, total: 15,
-  estado: 16, fecha: 17, id: 18,
+  estado: 16, fecha: 17, id: 18, fechaCosecha: 19,
 };
 
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
@@ -45,6 +45,7 @@ function buildPedidos(rows, firstRow) {
       estado:      G.normEstado(r[COL.estado]),
       fechaISO:    G.anyToISO(r[COL.fecha]),
       id:          String(r[COL.id] ?? '').trim(),
+      fechaCosechaISO: G.anyToISO(r[COL.fechaCosecha]),
     });
   }
   return pedidos;
@@ -141,11 +142,12 @@ exports.handler = async (event) => {
     const user = await G.validateUser(token, body.mail, body.pss);
     if (!user) return G.json(401, { error: 'Mail o contraseña incorrectos.' });
 
-    const [ped, det, conf, stk] = await Promise.all([
+    const [ped, det, conf, stk, cos] = await Promise.all([
       G.readSheet(token, 'Pedidos'),
       G.readSheet(token, 'Detalle por Verdura'),
       G.readSheet(token, 'Config'),
       G.readSheet(token, 'StockDisponible'),
+      G.readSheet(token, 'Cosechas'),
     ]);
 
     const stock   = G.parseStockDisponible(stk.values || []);
@@ -154,8 +156,9 @@ exports.handler = async (event) => {
     const cat     = catalogFull(det.values || [], stock.cosechada, pedidas.verduras);
     const config  = buildConfig(conf.values || []);
     const cosecha = computeCosecha(pedidos, cat.index);
+    const cosechas = G.parseCosechas(cos.values || []);
 
-    return G.json(200, { ok: true, nombre: user.nombre, pedidos, cosecha, catalogo: cat.lista, config, fechaCosecha: stock.fecha });
+    return G.json(200, { ok: true, nombre: user.nombre, pedidos, cosecha, catalogo: cat.lista, config, fechaCosecha: stock.fecha, cosechas });
   } catch (err) {
     console.error('[admin]', err.message);
     return G.json(500, { error: 'Error del servidor: ' + err.message });

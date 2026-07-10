@@ -58,6 +58,13 @@ exports.handler = async (event) => {
       let rIdx = rows.findIndex(r => String(r[0] ?? '').trim().toLowerCase() === 'cosecha');
       const excelRow = rIdx === -1 ? firstRow : firstRow + rIdx;
       await G.patchRange(token, 'StockDisponible', `B${excelRow}`, [G.dateToExcel(iso)], ['dd/mm/yyyy']);
+
+      // Registrar la fecha en la hoja "Cosechas" (col A desde fila 2) si no está.
+      const cos = await G.readSheet(token, 'Cosechas');
+      if (!G.parseCosechas(cos.values || []).includes(iso)) {
+        const nextRow = G.nextRowFromRows(cos.values || [], cos.firstRow, 0);
+        await G.patchRange(token, 'Cosechas', `A${nextRow}`, [G.dateToExcel(iso)], ['dd/mm/yyyy']);
+      }
     }
 
     // ── Precios / stock por verdura ───────────────────────────────────────────
