@@ -43,11 +43,15 @@
   .tab-btn.active{background:var(--verde);color:#fff;border-color:var(--verde);}
   .tab-content{display:none;} .tab-content.active{display:block;}
   .bolson-qty-box{display:flex;align-items:center;gap:1.25rem;padding:1rem;background:var(--crema);border:1.5px solid var(--borde);border-radius:12px;margin-bottom:.75rem;}
+  .bolson-qty-box.agotado{opacity:.75;}
   .bolson-qty-label{flex:1;font-size:.95rem;} .bolson-qty-label span{display:block;font-size:.8rem;color:var(--texto-suave);margin-top:2px;}
   .grupo-titulo{font-family:'Fraunces',serif;font-size:.95rem;color:var(--verde);font-weight:600;margin:1rem 0 .4rem;padding-bottom:.3rem;border-bottom:1.5px solid var(--verde-claro);}
   .producto-row{display:flex;align-items:center;gap:.5rem;padding:.5rem 0;border-bottom:1px solid var(--crema-oscura);}
   .producto-row:last-child{border-bottom:none;}
   .producto-nombre{flex:1;font-size:.88rem;line-height:1.3;}
+  .producto-row.agotado{opacity:.5;}
+  .producto-row.agotado .qty-control{pointer-events:none;opacity:.5;}
+  .stock-hint{display:block;font-size:.72rem;color:var(--verde-medio);margin-top:2px;}
   .precio-ref{font-size:.75rem;color:#bbb;white-space:nowrap;}
   .qty-control{display:flex;align-items:center;gap:.4rem;}
   .qty-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--borde);background:var(--crema);cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;color:var(--verde);font-weight:700;}
@@ -84,6 +88,9 @@
   .success-icon{font-size:4rem;margin-bottom:1rem;}
   .success-title{font-family:'Fraunces',serif;font-size:1.6rem;color:var(--verde);margin-bottom:.5rem;}
   .success-msg{color:var(--texto-suave);line-height:1.75;}
+  .btn-copiar-alias{display:inline-flex;align-items:center;gap:.4rem;margin-top:.75rem;padding:.5rem 1rem;background:var(--verde-claro);color:var(--verde);border:1.5px solid #b8d9a8;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;}
+  .btn-copiar-alias:hover{background:#dcefd2;} .btn-copiar-alias:active{transform:scale(.97);}
+  .btn-copiar-alias.copiado{background:var(--verde);color:#fff;border-color:var(--verde);}
   .loader{text-align:center;padding:2rem;color:var(--texto-suave);}
   .spinner{display:inline-block;width:1em;height:1em;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:.4rem;}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -143,7 +150,7 @@
       <div class="entrega-panel" id="panel-retiro">
         <div class="retiro-info">
           <strong>Retiro sin costo 🎉</strong><br>📍 Ruta 8 km 609, Río Cuarto, Córdoba<br>Coordinamos el horario por WhatsApp.<br>
-          <a class="maps-btn" href="https://maps.google.com/?q=Ruta+8+km+609+Rio+Cuarto+Cordoba" target="_blank">🗺️ Ver en Google Maps</a>
+          <a class="maps-btn" href="https://www.google.com/maps/place/Huerta+sustentable/@-33.168989,-64.377185,17z" target="_blank">🗺️ Ver en Google Maps</a>
         </div>
       </div>
     </div>
@@ -156,9 +163,9 @@
         <button class="tab-btn" onclick="cambiarTab(this,'armalo')">Armá tu bolsón</button>
       </div>
       <div class="tab-content active" id="tab-bolsones">
-        <div class="bolson-qty-box">
-          <div class="bolson-qty-label">Bolsón semanal<span>Surtido de verduras de estación según disponibilidad</span></div>
-          <div class="qty-control">
+        <div class="bolson-qty-box" id="bolson-box">
+          <div class="bolson-qty-label">Bolsón semanal<span id="bolson-desc">Surtido de verduras de estación según disponibilidad</span></div>
+          <div class="qty-control" id="bolson-ctrl">
             <button class="qty-btn" onclick="chBolson(-1)">−</button>
             <span class="qty-num" id="bolson-qty" style="width:28px;font-size:.95rem;">0</span>
             <button class="qty-btn" onclick="chBolson(1)">+</button>
@@ -209,11 +216,6 @@
           <div class="pago-info"><div class="pago-nombre">Transferencia</div><div class="pago-detalle" id="pago-alias-detalle">Alias: —</div></div>
         </label>
         <div class="pago-extra-info" id="info-transferencia"></div>
-        <label class="pago-card" onclick="selPago(this,'Efectivo')">
-          <input type="radio" name="pago" value="efectivo">
-          <span class="pago-icon">💵</span>
-          <div class="pago-info"><div class="pago-nombre">Efectivo</div><div class="pago-detalle">Pagás cuando recibís el pedido</div></div>
-        </label>
       </div>
     </div>
 

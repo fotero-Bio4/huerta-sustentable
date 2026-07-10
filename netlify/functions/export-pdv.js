@@ -1,7 +1,7 @@
 'use strict';
 
 // POST con login: genera el archivo PDV (.xls) para importar al ERP, con los
-// pedidos cuyo FechaPedido cae entre {desde, hasta} (inclusive) y estado≠cancelado.
+// pedidos cuyo FechaPedido cae entre {desde, hasta} (inclusive) y estado = pagado.
 // Cada ítem (bolsón / verdura / extra) es una fila. El mapeo de códigos y los
 // valores fijos de cabecera se leen de la hoja "Mapeo PDV".
 
@@ -31,7 +31,7 @@ function buildPedidos(rows, firstRow) {
       detalle:  String(r[COL.detalle] ?? '').trim(),
       extras:   String(r[COL.extras] ?? '').trim(),
       pago:     String(r[COL.pago] ?? '').trim(),
-      estado:   String(r[COL.estado] ?? '').trim().toLowerCase() || 'pendiente',
+      estado:   G.normEstado(r[COL.estado]),
       fechaISO: G.anyToISO(r[COL.fecha]),
     });
   }
@@ -117,9 +117,9 @@ exports.handler = async (event) => {
     if (!header.length) return G.json(500, { error: 'La hoja PDV no tiene encabezados.' });
 
     const pedidos = buildPedidos(ped.values || [], ped.firstRow)
-      .filter(p => p.estado !== 'cancelado' && p.fechaISO && p.fechaISO >= desde && p.fechaISO <= hasta);
+      .filter(p => p.estado === 'pagado' && p.fechaISO && p.fechaISO >= desde && p.fechaISO <= hasta);
 
-    if (!pedidos.length) return G.json(404, { error: 'No hay pedidos en ese rango de fechas.' });
+    if (!pedidos.length) return G.json(404, { error: 'No hay pedidos pagados en ese rango de fechas.' });
 
     const precios = priceIndex(det.values || []);
     const { productMap, fixed } = parseMapeo(map.values || []);

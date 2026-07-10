@@ -42,7 +42,7 @@ function buildPedidos(rows, firstRow) {
       totalExtras: num(r[COL.totalExtras]),
       pago:        String(r[COL.pago] ?? '').trim(),
       total:       num(r[COL.total]),
-      estado:      String(r[COL.estado] ?? '').trim().toLowerCase() || 'pendiente',
+      estado:      G.normEstado(r[COL.estado]),
       fechaISO:    G.anyToISO(r[COL.fecha]),
       id:          String(r[COL.id] ?? '').trim(),
     });
@@ -58,12 +58,16 @@ function parseBool(v, def = true) {
   return def;
 }
 
-// Catálogo completo desde "Detalle por Verdura": índice por nombre + lista con stock.
-function catalogFull(rows) {
+// Catálogo completo desde "Detalle por Verdura": índice por nombre + lista con
+// stock (toggle admin), cantidad cosechada (de StockDisponible), pedida y disponible.
+function catalogFull(rows, cosechada) {
+  cosechada = cosechada || {};
   let hIdx = rows.findIndex(r => r.some(c => String(c ?? '').trim().toLowerCase() === 'grupo'));
   if (hIdx === -1) hIdx = 1;
   const header = (rows[hIdx] || []).map(c => String(c ?? '').trim().toLowerCase());
   const cS = header.findIndex(h => h === 'stock');
+  let cPed = header.findIndex(h => h === 'cantidad pedida' || h.startsWith('cantidad pedida'));
+  if (cPed === -1) cPed = 4;
   const index = {};
   const lista = [];
   for (let i = hIdx + 1; i < rows.length; i++) {
@@ -72,8 +76,11 @@ function catalogFull(rows) {
     const grupo  = String(r[1] ?? '').trim();
     if (!nombre || !grupo || /total/i.test(nombre)) continue;
     if (['extras', 'bolsones', 'bolsón', 'bolson'].includes(grupo.toLowerCase())) continue;
+    const cos    = cosechada[nombre.toLowerCase()] || 0;
+    const pedida = num(r[cPed]);
     const item = { nombre, grupo, unidad: String(r[2] ?? '').trim(), precio: num(r[3]),
-      stock: cS === -1 ? true : parseBool(r[cS], true) };
+      stock: cS === -1 ? true : parseBool(r[cS], true),
+      cosechada: cos, pedida, disponible: Math.max(0, cos - pedida) };
     index[nombre.toLowerCase()] = item;
     lista.push(item);
   }
@@ -134,14 +141,16 @@ exports.handler = async (event) => {
     const user = await G.validateUser(token, body.mail, body.pss);
     if (!user) return G.json(401, { error: 'Mail o contraseña incorrectos.' });
 
-    const [ped, det, conf] = await Promise.all([
+    const [ped, det, conf, stk] = await Promise.all([
       G.readSheet(token, 'Pedidos'),
       G.readSheet(token, 'Detalle por Verdura'),
       G.readSheet(token, 'Config'),
+      G.readSheet(token, 'StockDisponible'),
     ]);
 
+    const stock   = G.parseStockDisponible(stk.values || []);
     const pedidos = buildPedidos(ped.values || [], ped.firstRow);
-    const cat     = catalogFull(det.values || []);
+    const cat     = catalogFull(det.values || [], stock.cosechada);
     const config  = buildConfig(conf.values || []);
     const cosecha = computeCosecha(pedidos, cat.index);
 

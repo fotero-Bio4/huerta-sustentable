@@ -172,6 +172,36 @@ function parseDetalle(text) {
     });
 }
 
+// ── Stock disponible (hoja "StockDisponible") ──────────────────────────────────
+// Layout agrupado por categoría: filas de producto = "Producto | Unidad |
+// Cant. cosechada | Precio | Total". Devuelve el mapa nombre→cosechada y el
+// bolsón por separado. Saltea títulos de sección, encabezados y SUBTOTAL.
+function parseStockDisponible(rows) {
+  const cosechada = {};
+  let bolson = 0;
+  for (const r of (rows || [])) {
+    const nombre = String(r[0] ?? '').trim();
+    if (!nombre) continue;
+    const nl = nombre.toLowerCase();
+    if (nl === 'producto' || nl.startsWith('subtotal')) continue;
+    const cant = Number(r[2]);                 // col C = Cant. cosechada
+    if (!Number.isFinite(cant)) continue;      // títulos de sección tienen col C vacía
+    if (nl === 'bolsón semanal' || nl === 'bolson semanal') { bolson = cant; continue; }
+    cosechada[nl] = cant;
+  }
+  return { cosechada, bolson };
+}
+
+// ── Estados de pedido: canónicos + normalización de valores viejos ──────────────
+// Canónicos: pendiente | confirmado | pagado | cancelado
+function normEstado(v) {
+  const s = String(v ?? '').trim().toLowerCase();
+  if (s === 'preparando') return 'confirmado';
+  if (s === 'entregado')  return 'pagado';
+  if (['pendiente', 'confirmado', 'pagado', 'cancelado'].includes(s)) return s;
+  return 'pendiente';
+}
+
 // ── Login (hoja Usuarios: Mail | Nombre | Pss) ──────────────────────────────────
 async function validateUser(token, mail, pss) {
   if (!mail || !pss) return null;
@@ -192,5 +222,6 @@ module.exports = {
   readSheet, patchRange, patchCell,
   colLetter, dateToExcel, excelToDate, anyToISO, nextRowFromRows,
   formatDetalle, parseDetalle,
+  parseStockDisponible, normEstado,
   validateUser,
 };

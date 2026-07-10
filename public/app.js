@@ -18,7 +18,7 @@ const TIPOS_ENSALADA = [
   'Repollo + zanahoria + cherry', 'Lechuga crespa + apio + rabanito',
 ];
 
-let CONFIG = {}, CATALOG = [];
+let CONFIG = {}, CATALOG = [], BOLSON = { cosechada:0, pedida:0, disponible:0 };
 let cantVerd = [];                 // cantVerd[gi][ii]
 let cantBolson = 0;
 let extQty = { sopera:0, ensalada:0, escabeche:0 };
@@ -30,11 +30,12 @@ const fmt = n => '$' + Number(n).toLocaleString('es-AR');
 // ── Carga inicial ───────────────────────────────────────────────────────────
 async function cargarCatalogo() {
   try {
-    const r = await fetch('/.netlify/functions/catalogo');
+    const r = await fetch('/.netlify/functions/catalogo', { cache: 'no-store' });
     const d = await r.json();
     if (!r.ok || !d.ok) throw new Error(d.error || 'No se pudo cargar el catálogo.');
     CONFIG = d.config || {};
     CATALOG = d.catalogo || [];
+    BOLSON = d.bolson || { cosechada:0, pedida:0, disponible:0 };
     cantVerd = CATALOG.map(g => g.items.map(() => 0));
     renderTodo();
     $('loaderCatalogo').style.display = 'none';
@@ -47,22 +48,85 @@ async function cargarCatalogo() {
   }
 }
 
+// Bloque de datos bancarios para transferencia (todo desde la hoja "Config" del Excel).
+function datosBancariosHTML() {
+  const linea = (icon, label, val) => val ? `<div>${icon} ${label}: <strong>${val}</strong></div>` : '';
+  const conCopia = (icon, label, val, fn) => val
+    ? `<div>${icon} ${label}: <strong>${val}</strong> <button type="button" class="btn-copiar-alias" onclick="${fn}(this)">📋 Copiar</button></div>`
+    : '';
+  return `📎 Una vez confirmado el pedido, transferís y enviás el comprobante por WhatsApp.
+    ${linea('🏦', 'Banco', CONFIG.BANCO)}
+    ${linea('👤', 'Titular', CONFIG.TITULAR)}
+    ${conCopia('🔢', 'CBU', CONFIG.CBU, 'copiarCBU')}
+    ${conCopia('📲', 'Alias', CONFIG.ALIAS, 'copiarAlias')}`;
+}
+
+// Copia texto al portapapeles (con fallback para navegadores viejos / sin permiso).
+function copiarTexto(btn, valor) {
+  if (!valor) return;
+  const ok = () => {
+    const prev = btn.innerHTML;
+    btn.innerHTML = '✓ Copiado';
+    btn.classList.add('copiado');
+    setTimeout(() => { btn.innerHTML = prev; btn.classList.remove('copiado'); }, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(valor).then(ok).catch(() => copiarFallback(valor, ok));
+  } else {
+    copiarFallback(valor, ok);
+  }
+}
+function copiarFallback(valor, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = valor; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); cb && cb(); } catch (e) {}
+  document.body.removeChild(ta);
+}
+function copiarAlias(btn) { copiarTexto(btn, CONFIG.ALIAS); }
+function copiarCBU(btn)   { copiarTexto(btn, CONFIG.CBU); }
+
 function renderTodo() {
   $('envio-monto').textContent = fmt(CONFIG.PRECIO_ENVIO || 0);
   $('bolson-sub').textContent = '';
   $('pago-alias-detalle').textContent = 'Alias: ' + (CONFIG.ALIAS || '—') + (CONFIG.BANCO ? ' — ' + CONFIG.BANCO : '');
-  $('info-transferencia').innerHTML = `📎 Una vez confirmado el pedido, transferís al alias <strong>${CONFIG.ALIAS||'—'}</strong>${CONFIG.BANCO?' ('+CONFIG.BANCO+')':''} y enviás el comprobante por WhatsApp.`;
+  $('info-transferencia').innerHTML = datosBancariosHTML();
   renderGrupos();
   renderExtras();
   renderEnsaladaRows();
+  renderBolsonStock();
+  // Único medio de pago: Transferencia. Se deja preseleccionada.
+  const pc = document.querySelector('.pago-card');
+  if (pc) selPago(pc, 'Transferencia');
+}
+
+// Estado de stock del bolsón: si no hay disponible, deshabilita el control.
+function renderBolsonStock() {
+  const box = $('bolson-box'), desc = $('bolson-desc'), ctrl = $('bolson-ctrl');
+  if (!box) return;
+  const disp = BOLSON.disponible || 0;
+  if (disp <= 0) {
+    cantBolson = 0; $('bolson-qty').textContent = 0; $('bolson-sub').textContent = '';
+    box.classList.add('agotado');
+    desc.innerHTML = '<span class="stock-badge">Sin stock</span> Por el momento no hay bolsones disponibles';
+    ctrl.style.pointerEvents = 'none'; ctrl.style.opacity = '.4';
+  } else {
+    box.classList.remove('agotado');
+    desc.innerHTML = `Surtido de verduras de estación según disponibilidad <span class="stock-hint">Quedan ${disp} disponibles</span>`;
+    ctrl.style.pointerEvents = ''; ctrl.style.opacity = '';
+  }
 }
 
 function renderGrupos() {
   $('gruposContainer').innerHTML = CATALOG.map((g, gi) => `
     <div class="grupo-titulo">${GRUPO_EMOJI[g.grupo]||'🥗'} ${g.grupo}</div>
-    ${g.items.map((p, ii) => `
-      <div class="producto-row">
-        <span class="producto-nombre">${p.nombre} <span style="color:#aaa;font-size:.78rem;">(${p.unidad})</span></span>
+    ${g.items.map((p, ii) => {
+      const hint = p.sinStock
+        ? '<span class="stock-badge">Sin stock</span>'
+        : `<span class="stock-hint">Quedan ${p.disponible}</span>`;
+      return `
+      <div class="producto-row${p.sinStock?' agotado':''}">
+        <span class="producto-nombre">${p.nombre} <span style="color:#aaa;font-size:.78rem;">(${p.unidad})</span> ${hint}</span>
         <span class="precio-ref">${fmt(p.precio)}</span>
         <div class="qty-control">
           <button class="qty-btn" onclick="chVerd(${gi},${ii},-1)">−</button>
@@ -70,7 +134,8 @@ function renderGrupos() {
           <button class="qty-btn" onclick="chVerd(${gi},${ii},1)">+</button>
         </div>
         <span class="prod-sub" id="v-s-${gi}-${ii}"></span>
-      </div>`).join('')}
+      </div>`;
+    }).join('')}
   `).join('') || '<p style="color:var(--texto-suave);font-size:.88rem">No hay productos disponibles en este momento.</p>';
 }
 
@@ -117,15 +182,18 @@ function selEntrega(tipo) {
 }
 function onDireccion(val){ tieneDir = val.trim().length>0; $('envio-aviso').style.display = tieneDir?'flex':'none'; calcResumen(); }
 function chBolson(d){
-  cantBolson = Math.max(0, cantBolson+d);
+  const max = BOLSON.disponible || 0;
+  cantBolson = Math.min(max, Math.max(0, cantBolson+d));
   $('bolson-qty').textContent = cantBolson;
   $('bolson-sub').textContent = cantBolson>0 ? fmt(cantBolson*(CONFIG.PRECIO_BOLSON||0)) : '';
   calcResumen();
 }
 function chVerd(gi,ii,d){
-  cantVerd[gi][ii] = Math.max(0, cantVerd[gi][ii]+d);
+  const p = CATALOG[gi].items[ii];
+  if (p.sinStock) return;
+  cantVerd[gi][ii] = Math.min(p.disponible, Math.max(0, cantVerd[gi][ii]+d));
   $(`v-q-${gi}-${ii}`).textContent = cantVerd[gi][ii];
-  const sub = cantVerd[gi][ii]*CATALOG[gi].items[ii].precio;
+  const sub = cantVerd[gi][ii]*p.precio;
   $(`v-s-${gi}-${ii}`).textContent = sub>0?fmt(sub):'';
   calcResumen();
 }
@@ -215,7 +283,10 @@ async function confirmarPedido() {
     $('mainForm').style.display='none';
     $('successScreen').classList.add('show');
     let txt = `Tu pedido fue enviado correctamente${email?` y te llega una copia al confirmar`:''}. Nos comunicamos por WhatsApp para confirmar el pedido y el precio final.`;
-    if (pagoSel==='Transferencia') txt += ` Cuando esté confirmado, transferís al alias <strong>${CONFIG.ALIAS||'—'}</strong> y mandás el comprobante.`;
+    if (pagoSel==='Transferencia') {
+      txt += ` Cuando esté confirmado, transferís al alias <strong>${CONFIG.ALIAS||'—'}</strong> y mandás el comprobante.`;
+      if (CONFIG.ALIAS) txt += `<br><button type="button" class="btn-copiar-alias" onclick="copiarAlias(this)">📋 Copiar alias</button>`;
+    }
     $('successMsg').innerHTML = txt;
     window.scrollTo({top:0,behavior:'smooth'});
   } catch (err) {
