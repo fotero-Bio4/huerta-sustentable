@@ -10,6 +10,7 @@ const fmt = n => '$' + Number(n || 0).toLocaleString('es-AR');
 let session = { mail:'', pss:'', nombre:'' };
 let DATA = { pedidos:[], cosecha:{verduras:[],extras:[],bolsones:0}, catalogo:[], config:{} };
 let filtro = 'todos', selRow = null;
+let seleccion = new Set();   // excelRows seleccionadas para cambio masivo
 
 // ── LOGIN ───────────────────────────────────────────────────────────────────
 async function login() {
@@ -56,14 +57,14 @@ function tab(btn, name){
 function stats(){
   const activos = DATA.pedidos.filter(p=>p.estado!=='cancelado');
   $('stHoy').textContent = DATA.pedidos.length;
-  $('stPend').textContent = DATA.pedidos.filter(p=>p.estado==='pendiente'||p.estado==='preparando').length;
+  $('stPend').textContent = DATA.pedidos.filter(p=>p.estado==='pendiente').length;
   $('stTotal').textContent = fmt(activos.reduce((s,p)=>s+(p.total||0),0));
 }
 function setFiltro(btn,f){ document.querySelectorAll('#panel-pedidos .filtro-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); filtro=f; renderPedidos(); }
 
+const ESTADO_LBL = { pendiente:'⏳ Pendiente de Aprobación', confirmado:'✅ Confirmado', pagado:'💰 Pagado', cancelado:'❌ Cancelado' };
 function estadoBadge(e){
-  const lbl={pendiente:'⏳ Pendiente',preparando:'👩‍🍳 Preparando',entregado:'✅ Entregado',cancelado:'❌ Cancelado'};
-  return `<span class="badge badge-${e}">${lbl[e]||e}</span>`;
+  return `<span class="badge badge-${e}">${ESTADO_LBL[e]||e}</span>`;
 }
 function renderPedidos(){
   const q = ($('buscar').value||'').toLowerCase();
@@ -73,7 +74,7 @@ function renderPedidos(){
     return mf && mb;
   });
   const cont = $('listaPedidos');
-  if (!lista.length){ cont.innerHTML='<div class="empty"><div>📭</div><p>No hay pedidos.</p></div>'; return; }
+  if (!lista.length){ cont.innerHTML='<div class="empty"><div>📭</div><p>No hay pedidos.</p></div>'; updateBulkCount(); return; }
   cont.innerHTML = lista.map(p=>{
     const cuerpo = [
       p.bolsones>0 ? `Bolsón semanal ×${p.bolsones}` : '',
@@ -82,10 +83,13 @@ function renderPedidos(){
     const wa = `https://wa.me/549${(p.tel||'').replace(/\D/g,'')}?text=${encodeURIComponent('¡Hola '+p.nombre.split(' ')[0]+'! 🌿 Te escribo por tu pedido de Huerta Sustentable.')}`;
     return `<div class="pedido-card">
       <div class="pedido-header">
-        <div>
-          <div class="pedido-nombre">${p.nombre}</div>
-          <div class="pedido-meta">📱 ${p.tel}${p.email?' · 📧 '+p.email:''}</div>
-          <div class="pedido-meta">📍 ${p.dir||'-'}${p.barrio?' — '+p.barrio:''} · ${p.fechaISO||''}</div>
+        <div style="display:flex;gap:.6rem;align-items:flex-start">
+          <input type="checkbox" class="sel-check" ${seleccion.has(p.excelRow)?'checked':''} onclick="toggleSel(${p.excelRow},this.checked)" title="Seleccionar">
+          <div>
+            <div class="pedido-nombre">${p.nombre}</div>
+            <div class="pedido-meta">📱 ${p.tel}${p.email?' · 📧 '+p.email:''}</div>
+            <div class="pedido-meta">📍 ${p.dir||'-'}${p.barrio?' — '+p.barrio:''} · ${p.fechaISO||''}</div>
+          </div>
         </div>
         <div style="text-align:right">
           <div class="pedido-precio">${p.total>0?fmt(p.total):'a confirmar'}</div>
@@ -102,6 +106,33 @@ function renderPedidos(){
       </div>
     </div>`;
   }).join('');
+  updateBulkCount();
+}
+
+// ── SELECCIÓN MASIVA ──────────────────────────────────────────────────────────
+function toggleSel(row,on){ if(on) seleccion.add(row); else seleccion.delete(row); updateBulkCount(); }
+function toggleSelAll(cb){
+  const q = ($('buscar').value||'').toLowerCase();
+  DATA.pedidos.forEach(p=>{
+    const mf = filtro==='todos' || p.estado===filtro;
+    const mb = p.nombre.toLowerCase().includes(q) || (p.tel||'').includes(q) || (p.barrio||'').toLowerCase().includes(q);
+    if (mf && mb){ if(cb.checked) seleccion.add(p.excelRow); else seleccion.delete(p.excelRow); }
+  });
+  renderPedidos();
+}
+function updateBulkCount(){ const el=$('bulkCount'); if(el) el.textContent = seleccion.size ? seleccion.size+' seleccionado(s)' : ''; }
+async function aplicarEstadoMasivo(){
+  const est = $('bulkEstado').value;
+  if (!est){ alert('Elegí un estado.'); return; }
+  if (!seleccion.size){ alert('Seleccioná al menos un pedido.'); return; }
+  const rows = [...seleccion];
+  const r = await fetch('/.netlify/functions/estado',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mail:session.mail,pss:session.pss,excelRows:rows,estado:est})});
+  const d = await r.json();
+  if (!r.ok || !d.ok){ alert(d.error||'No se pudo guardar.'); return; }
+  rows.forEach(row=>{ const p=DATA.pedidos.find(x=>x.excelRow===row); if(p)p.estado=est; });
+  seleccion.clear(); $('bulkEstado').value=''; const sa=$('selAll'); if(sa)sa.checked=false;
+  renderPedidos(); stats();
 }
 
 // Modales estado/precio
@@ -126,10 +157,47 @@ async function accionPedido(extra){
   if (!r.ok || !d.ok) alert(d.error || 'No se pudo guardar.');
 }
 
+// ── CÁLCULO DE COSECHA (client-side, filtrable por fecha) ────────────────────────
+// Parsea "Lechuga x2 planta | Mizuna x1 atado" → [{nombre,cantidad,unidad}]
+function parseDetalle(text){
+  if(!text) return [];
+  return String(text).split(/\s*[|/]\s*/).map(s=>s.trim()).filter(Boolean).map(seg=>{
+    const m=seg.match(/^(.*?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(.*)$/i);
+    if(!m) return {nombre:seg,cantidad:1,unidad:''};
+    return {nombre:m[1].trim(),cantidad:Number(String(m[2]).replace(',','.')),unidad:(m[3]||'').trim()};
+  });
+}
+function catIndex(){ const idx={}; (DATA.catalogo||[]).forEach(v=>{ idx[v.nombre.toLowerCase()]={nombre:v.nombre,grupo:v.grupo,unidad:v.unidad}; }); return idx; }
+function pedidosEnRango(desde,hasta){
+  return DATA.pedidos.filter(p=>{
+    if(desde && (!p.fechaISO || p.fechaISO<desde)) return false;
+    if(hasta && (!p.fechaISO || p.fechaISO>hasta)) return false;
+    return true;
+  });
+}
+function computeCosecha(desde,hasta){
+  const catIdx=catIndex(), verduras={}, extras={}; let bolsones=0;
+  for(const p of pedidosEnRango(desde,hasta)){
+    if(p.estado==='cancelado') continue;
+    bolsones += p.bolsones||0;
+    for(const it of parseDetalle(p.detalle)){
+      const key=it.nombre.toLowerCase();
+      const meta=catIdx[key]||{nombre:it.nombre,grupo:'Otros',unidad:it.unidad};
+      if(!verduras[key]) verduras[key]={nombre:meta.nombre,grupo:meta.grupo,unidad:meta.unidad,cantidad:0};
+      verduras[key].cantidad+=it.cantidad;
+    }
+    for(const e of parseDetalle(p.extras)) extras[e.nombre]=(extras[e.nombre]||0)+e.cantidad;
+  }
+  return { bolsones,
+    verduras:Object.values(verduras).filter(v=>v.cantidad>0).sort((a,b)=>a.grupo.localeCompare(b.grupo)||a.nombre.localeCompare(b.nombre)),
+    extras:Object.entries(extras).filter(([,c])=>c>0).map(([nombre,cantidad])=>({nombre,cantidad})) };
+}
+function limpiarFecha(pref){ $(pref+'Desde').value=''; $(pref+'Hasta').value=''; if(pref==='det') renderDetalle(); else renderCosecha(); }
+
 // ── DETALLE POR VERDURA ──────────────────────────────────────────────────────────
 function renderDetalle(){
-  const v = DATA.cosecha.verduras||[];
-  if (!v.length){ $('tablaDetalle').innerHTML='<div class="empty"><div>🌱</div><p>Sin verduras pedidas todavía.</p></div>'; return; }
+  const v = computeCosecha($('detDesde').value, $('detHasta').value).verduras;
+  if (!v.length){ $('tablaDetalle').innerHTML='<div class="empty"><div>🌱</div><p>Sin verduras pedidas en el rango.</p></div>'; return; }
   let html='<table><thead><tr><th>Verdura</th><th>Grupo</th><th>Unidad</th><th class="num">Cantidad</th></tr></thead><tbody>';
   v.forEach(x=>{ html+=`<tr><td>${x.nombre}</td><td>${x.grupo}</td><td>${x.unidad||''}</td><td class="num"><strong>${x.cantidad}</strong></td></tr>`; });
   html+='</tbody></table>';
@@ -138,7 +206,7 @@ function renderDetalle(){
 
 // ── COSECHA ────────────────────────────────────────────────────────────────────
 function renderCosecha(){
-  const c = DATA.cosecha;
+  const c = computeCosecha($('cosDesde').value, $('cosHasta').value);
   let html = `<div class="stat-pill" style="display:inline-block;margin-bottom:1rem">🧺 Bolsones semanales: <strong>${c.bolsones||0}</strong></div>`;
   const grupos = {};
   (c.verduras||[]).forEach(v=>{ (grupos[v.grupo]=grupos[v.grupo]||[]).push(v); });
@@ -169,12 +237,18 @@ function renderConfig(){
   $('cfgGrid').innerHTML = CFG_FIELDS.map(([k,l])=>`<div class="cfg-item"><label>${l}</label><input type="number" id="cfg-${k}" value="${cfg[k]??''}"></div>`).join('')
     + SS_FIELDS.map(([k,l])=>`<div class="cfg-item" style="display:flex;align-items:center;gap:.6rem;align-self:end"><button class="toggle ${cfg[k]?'off':'on'}" id="cfg-${k}" data-on="${cfg[k]?0:1}" onclick="togCfgSS('${k}')"></button><span style="font-size:.82rem">${l} (con stock)</span></div>`).join('');
 
-  $('cfgVerduras').innerHTML = (DATA.catalogo||[]).map((v,i)=>`
+  $('cfgVerduras').innerHTML = (DATA.catalogo||[]).map((v,i)=>{
+    const disp = v.disponible ?? 0;
+    const dispTxt = disp<=0
+      ? '<span style="color:#c0392b;font-weight:600">agotado</span>'
+      : `disp: <strong>${disp}</strong>`;
+    return `
     <div class="vrow">
-      <span class="vn">${v.nombre} <small>(${v.grupo} · ${v.unidad||''})</small></span>
+      <span class="vn">${v.nombre} <small>(${v.grupo} · ${v.unidad||''}) · cosech: ${v.cosechada??0} · ${dispTxt}</small></span>
       <input type="number" id="vp-${i}" value="${v.precio}" min="0">
-      <button class="toggle ${v.stock?'on':'off'}" id="vs-${i}" data-on="${v.stock?1:0}" onclick="togVerdStock(${i})" title="Stock"></button>
-    </div>`).join('') || '<p style="color:var(--texto-suave);font-size:.85rem">Sin verduras en el catálogo.</p>';
+      <button class="toggle ${v.stock?'on':'off'}" id="vs-${i}" data-on="${v.stock?1:0}" onclick="togVerdStock(${i})" title="Habilitar/deshabilitar en el formulario"></button>
+    </div>`;
+  }).join('') || '<p style="color:var(--texto-suave);font-size:.85rem">Sin verduras en el catálogo.</p>';
 }
 function togCfgSS(k){ const b=$('cfg-'+k); const on=b.dataset.on==='1'?0:1; b.dataset.on=on; b.classList.toggle('on',!!on); b.classList.toggle('off',!on); }
 function togVerdStock(i){ const b=$('vs-'+i); const on=b.dataset.on==='1'?0:1; b.dataset.on=on; b.classList.toggle('on',!!on); b.classList.toggle('off',!on); }

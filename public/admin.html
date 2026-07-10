@@ -49,6 +49,12 @@
   .filtro-btn{padding:.4rem .9rem;border:1.5px solid var(--borde);border-radius:20px;font-size:.83rem;cursor:pointer;background:#fff;color:var(--texto-suave);}
   .filtro-btn.active{background:var(--verde);color:#fff;border-color:var(--verde);}
   .buscar{margin-left:auto;} .buscar input{padding:.4rem .8rem;border:1.5px solid var(--borde);border-radius:20px;font-family:'DM Sans',sans-serif;font-size:.85rem;background:#fff;}
+  .bulk-bar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;background:#fff;border:1px solid var(--borde);border-radius:12px;padding:.5rem .8rem;margin-bottom:.9rem;}
+  .bulk-bar select{padding:.35rem .6rem;border:1.5px solid var(--borde);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.83rem;background:var(--crema);}
+  .fecha-filtro{display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end;background:#fff;border:1px solid var(--borde);border-radius:12px;padding:.6rem .8rem;margin-bottom:1rem;}
+  .fecha-filtro label{font-size:.75rem;color:var(--texto-suave);display:block;margin-bottom:.2rem;}
+  .fecha-filtro input{padding:.35rem .5rem;border:1.5px solid var(--borde);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.83rem;background:var(--crema);}
+  .sel-check{width:18px;height:18px;flex-shrink:0;accent-color:var(--verde);cursor:pointer;}
 
   /* PEDIDOS */
   .pedido-card{background:#fff;border:1px solid var(--borde);border-radius:14px;padding:1rem 1.25rem;margin-bottom:.75rem;}
@@ -59,8 +65,8 @@
   .pedido-body{font-size:.85rem;color:var(--texto-suave);margin-bottom:.7rem;line-height:1.55;white-space:pre-wrap;}
   .pedido-footer{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
   .badge{padding:.3rem .7rem;border-radius:12px;font-size:.76rem;font-weight:600;}
-  .badge-pendiente{background:#fff3cd;color:#856404;} .badge-preparando{background:#cce5ff;color:#004085;}
-  .badge-entregado{background:var(--verde-claro);color:var(--verde);} .badge-cancelado{background:#f8d7da;color:#721c24;}
+  .badge-pendiente{background:#fff3cd;color:#856404;} .badge-confirmado{background:#cce5ff;color:#004085;}
+  .badge-pagado{background:var(--verde-claro);color:var(--verde);} .badge-cancelado{background:#f8d7da;color:#721c24;}
   .badge-sec{background:var(--crema-oscura);color:#6b4e2a;font-size:.74rem;}
   .mini{padding:.3rem .7rem;border-radius:8px;border:1.5px solid var(--borde);background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;}
   .mini:hover{background:var(--verde-claro);border-color:var(--verde);}
@@ -146,21 +152,45 @@
     <div class="filtros">
       <button class="filtro-btn active" onclick="setFiltro(this,'todos')">Todos</button>
       <button class="filtro-btn" onclick="setFiltro(this,'pendiente')">Pendientes</button>
-      <button class="filtro-btn" onclick="setFiltro(this,'preparando')">Preparando</button>
-      <button class="filtro-btn" onclick="setFiltro(this,'entregado')">Entregados</button>
+      <button class="filtro-btn" onclick="setFiltro(this,'confirmado')">Confirmados</button>
+      <button class="filtro-btn" onclick="setFiltro(this,'pagado')">Pagados</button>
+      <button class="filtro-btn" onclick="setFiltro(this,'cancelado')">Cancelados</button>
       <div class="buscar"><input id="buscar" placeholder="🔍 Buscar…" oninput="renderPedidos()"></div>
+    </div>
+    <div class="bulk-bar">
+      <label style="display:flex;align-items:center;gap:.4rem;font-size:.83rem;cursor:pointer"><input type="checkbox" id="selAll" onclick="toggleSelAll(this)"> Seleccionar todos</label>
+      <select id="bulkEstado">
+        <option value="">Cambiar estado a…</option>
+        <option value="pendiente">⏳ Pendiente de Aprobación</option>
+        <option value="confirmado">✅ Confirmado</option>
+        <option value="pagado">💰 Pagado</option>
+        <option value="cancelado">❌ Cancelado</option>
+      </select>
+      <button class="mini" onclick="aplicarEstadoMasivo()">Aplicar a seleccionados</button>
+      <span id="bulkCount" style="font-size:.8rem;color:var(--texto-suave)"></span>
     </div>
     <div id="listaPedidos"></div>
   </div>
 
   <!-- DETALLE -->
   <div class="panel" id="panel-detalle">
-    <p style="color:var(--texto-suave);font-size:.85rem;margin-bottom:.75rem;">Cantidad total a cosechar por verdura (suma de todos los pedidos no cancelados).</p>
+    <p style="color:var(--texto-suave);font-size:.85rem;margin-bottom:.75rem;">Cantidad total a cosechar por verdura (suma de pedidos no cancelados). Filtrá por fecha del pedido.</p>
+    <div class="fecha-filtro">
+      <div><label>Desde</label><input type="date" id="detDesde" onchange="renderDetalle()"></div>
+      <div><label>Hasta</label><input type="date" id="detHasta" onchange="renderDetalle()"></div>
+      <button class="mini" onclick="limpiarFecha('det')">Limpiar</button>
+    </div>
     <div id="tablaDetalle"></div>
   </div>
 
   <!-- COSECHA -->
   <div class="panel" id="panel-cosecha">
+    <p style="color:var(--texto-suave);font-size:.85rem;margin-bottom:.75rem;">Resumen de cosecha por grupo. Filtrá por fecha del pedido.</p>
+    <div class="fecha-filtro">
+      <div><label>Desde</label><input type="date" id="cosDesde" onchange="renderCosecha()"></div>
+      <div><label>Hasta</label><input type="date" id="cosHasta" onchange="renderCosecha()"></div>
+      <button class="mini" onclick="limpiarFecha('cos')">Limpiar</button>
+    </div>
     <div id="resumenCosecha"></div>
   </div>
 
@@ -192,9 +222,9 @@
 <!-- Modal estado -->
 <div class="overlay" id="ovEstado"><div class="modal">
   <h3>Cambiar estado</h3>
-  <div class="estado-opt" onclick="setEstado('pendiente')">⏳ Pendiente</div>
-  <div class="estado-opt" onclick="setEstado('preparando')">👩‍🍳 Preparando</div>
-  <div class="estado-opt" onclick="setEstado('entregado')">✅ Entregado</div>
+  <div class="estado-opt" onclick="setEstado('pendiente')">⏳ Pendiente de Aprobación</div>
+  <div class="estado-opt" onclick="setEstado('confirmado')">✅ Confirmado</div>
+  <div class="estado-opt" onclick="setEstado('pagado')">💰 Pagado</div>
   <div class="estado-opt" onclick="setEstado('cancelado')">❌ Cancelado</div>
   <button class="mini" style="width:100%;margin-top:.5rem" onclick="cerrar('ovEstado')">Cerrar</button>
 </div></div>
