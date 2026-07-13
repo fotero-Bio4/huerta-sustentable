@@ -1,0 +1,47 @@
+Buenas, paso un resumen de loque vimos y los cambios a incorporar en la app de huerta:
+
+1-	precios y stock Leer los productos  que estan en el Excel  en la hoja de StockDisponible, si permite cambiar el precio o deshabilitar para el formulario desde la app. Va a ser cargado el stock manual por la gente d elahuerta en el Excel:   huerta_base_semanal.xlsx hoja StockDisponible
+2-	filtro de fechas para la cosecha y detalle de verduras con respecto a la fecha de los productos.
+3-	Cambiar el punto de georeferencia de la huerta (lo pasas flor) @Florencia Pecorari
+4-	cambiar el alias (lo pasa flor) @Florencia Pecorari agregar el botón de copiar para que se guarde en borrador.
+5-	sacar el modo de pago efectivo
+6-	ver porque cuando desactivo un producto sigue apareciendo para comprar en el formulario, tambine ver que se desactive cuando se llega al limite de stock.
+
+7-	Agregar selector para cambiar estado de manera masiva -  dejar como estados 
+
+-Pendiente de Aprobación(cuando el usuario lo carga en la app)
+-Confirmado(cuando esta chequeada la disponibilidad de verduras)
+-Pagado
+-Cancelado
+
+8-	exportador pedido de venta solo imprimir los que estén con el estado de pagado.(@Maria Almazan completa el Excel en la hoja PDV   huerta_base_semanal.xlsx)
+
+9-	el Excel tiene una hoja que se llama StockDisponible donde esta la  cantidad cosechada de cada verdura y disponibilidad de bolsones, agregar en la app en la parte de stock donde se edita el precio la cantidad disponible de cada producto, cuanod llega a esa cantidad no se puede pedir mas(se deshabilita en el formulario).
+
+
+10-	Mensaje final de envío:
+
+“ ¡Pedido enviado!
+Tu pedido fue enviado correctamente y te llega una copia al confirmar. 
+Nos comunicamos por WhatsApp para confirmar el pedido y el precio final. 
+Cuando esté confirmado, transferís al alias mi.perra.venecia(cambiar ALias) y mandás el comprobante.”
+ver si se puede poner el boton para copiar el alias.
+
+
+Los datos bancarios para el pago de los bolsones/pedidos son los siguientes:
+🏦 Banco: ICBC
+👤 Titular: Bioetanol S.A.
+🔢 CBU: 0150526902000104826968
+📲 Alias: lima.chacra.churro
+
+(Solicitamos cambiar el alias, te envío el nuevo apenas tenga confirmación que se realizó)
+
+Geolocalización: https://maps.app.goo.gl/ScSyKAFdqZadM56n6?g_st=aw 
+https://www.google.com/maps/place/Huerta+sustentable/@-33.168989,-64.377185,17z/data=!3m1!4b1!4m6!3m5!1s0x95d1ff00634d13b1:0x8fe7ce4c22e7bcb1!8m2!3d-33.168989!4d-64.377185!16s%2Fg%2F11xt5bwkj4!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDYyOS4wIKXMDSoASAFQAw%3D%3D
+
+RJJF+C4, Río Cuarto, Córdoba
+
+
+
+
+
